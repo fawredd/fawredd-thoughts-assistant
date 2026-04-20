@@ -1,7 +1,7 @@
 
 # FULL PROJECT SPEC — AI JOURNAL + PSYCHOLOGIST ASSISTANT (MVP v1)
 
-You are a senior full-stack AI engineering team building a production-ready MVP.
+You are a development team building a production-ready MVP.
 
 Your job is to implement the application exactly as described.  
 Do not invent features outside this scope.
@@ -47,6 +47,9 @@ Deployment:
 Auth:
 - Clerk sdk
 - All data MUST be scoped by userId
+
+AI:
+- AI sdk - streams always
 
 ---
 
@@ -213,6 +216,8 @@ Supportive, grounded, insightful colleague.
 
 # 7. UI REQUIREMENTS
 
+- Mobile first. Responsive.
+
 Layout:
 - Left: Entry feed
 - Right sidebar: Life Snapshot dashboard
@@ -270,7 +275,7 @@ Ignore these for MVP.
 
 ---
 # 11. DEVELOPMENT
-- use pnpm
+- I use pnpm
 - for development create a alpine postress db and an alpine redis db in a docker-compose format. Then create .env.local file with required environment variables.
 
 ---
