@@ -17,7 +17,11 @@ export const UserStateSchema = z.object({
         currentPhase: z.string().describe("Etapa actual definida por el usuario o detectada (ej: 'Post-mudanza', 'Crisis laboral')."),
         lastMilestone: z.string().describe("El hito más reciente e importante detectado.")
     }),
-    continuityNotes: z.string().describe("Notas técnicas para que el psicólogo mantenga el hilo de la sesión anterior.")
+    continuityNotes: z.string().describe("Notas técnicas para que el psicólogo mantenga el hilo de la sesión anterior."),
+    detectedPatterns: z.array(z.string()).default([]).describe("Patrones de comportamiento o pensamiento recurrentes."),
+    inconsistencies: z.array(z.string()).default([]).describe("Contradicciones entre lo que el usuario dice sentir y sus acciones o relatos pasados."),
+    defenseMechanisms: z.array(z.string()).default([]).describe("Posibles mecanismos de defensa detectados (ej: negación, racionalización, minimización)."),
+    unexploredAreas: z.array(z.string()).default([]).describe("Temas que el usuario menciona superficialmente pero evita profundizar.")
 });
 
 export type UserState = z.infer<typeof UserStateSchema>;
@@ -34,5 +38,9 @@ export const DEFAULT_USER_STATE: UserState = {
         currentPhase: 'Evaluación inicial',
         lastMilestone: 'Registro de la primera entrada'
     },
-    continuityNotes: 'Sin notas previas.'
+    continuityNotes: 'Sin notas previas.',
+    detectedPatterns: [],
+    inconsistencies: [],
+    defenseMechanisms: [],
+    unexploredAreas: []
 };

@@ -7,6 +7,9 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { LanguageToggle } from "@/components/language-toggle"
+import { useLanguage } from "@/lib/language-context"
+import { t } from "@/lib/translations"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -26,6 +29,8 @@ import {
 export function Header() {
     const { isSignedIn, user } = useUser()
     const [isOpen, setIsOpen] = useState(false)
+    const { language } = useLanguage()
+    const trans = t[language]
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
@@ -40,6 +45,7 @@ export function Header() {
 
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex items-center gap-4">
+                    <LanguageToggle />
                     <ThemeToggle />
 
                     {isSignedIn ? (
@@ -70,13 +76,13 @@ export function Header() {
                                 <DropdownMenuItem asChild>
                                     <Link href="/profile" className="cursor-pointer">
                                         <User className="mr-2 h-4 w-4" />
-                                        <span>Profile</span>
+                                        <span>{trans.header_profile}</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
                                     <Link href="/settings" className="cursor-pointer">
                                         <Settings className="mr-2 h-4 w-4" />
-                                        <span>Settings</span>
+                                        <span>{trans.header_settings}</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
@@ -84,7 +90,7 @@ export function Header() {
                                     <SignOutButton>
                                         <div className="flex w-full items-center">
                                             <LogOut className="mr-2 h-4 w-4" />
-                                            <span>Logout</span>
+                                            <span>{trans.header_logout}</span>
                                         </div>
                                     </SignOutButton>
                                 </DropdownMenuItem>
@@ -99,6 +105,7 @@ export function Header() {
 
                 {/* Mobile Navigation */}
                 <div className="flex md:hidden items-center gap-2">
+                    <LanguageToggle />
                     <ThemeToggle />
                     <Sheet open={isOpen} onOpenChange={setIsOpen}>
                         <SheetTrigger asChild>
@@ -135,21 +142,21 @@ export function Header() {
                                         onClick={() => setIsOpen(false)}
                                         className="flex items-center px-4 py-3 text-lg font-medium rounded-xl hover:bg-accent transition-colors"
                                     >
-                                        Home
+                                        {trans.header_home}
                                     </Link>
                                     <Link
                                         href="/profile"
                                         onClick={() => setIsOpen(false)}
                                         className="flex items-center px-4 py-3 text-lg font-medium rounded-xl hover:bg-accent transition-colors"
                                     >
-                                        Profile
+                                        {trans.header_profile}
                                     </Link>
                                     <Link
                                         href="/settings"
                                         onClick={() => setIsOpen(false)}
                                         className="flex items-center px-4 py-3 text-lg font-medium rounded-xl hover:bg-accent transition-colors"
                                     >
-                                        Settings
+                                        {trans.header_settings}
                                     </Link>
                                 </nav>
                             </div>
@@ -160,7 +167,7 @@ export function Header() {
                                         <SignOutButton>
                                             <Button variant="destructive" className="w-full justify-start rounded-xl">
                                                 <LogOut className="mr-2 h-4 w-4" />
-                                                Logout
+                                                {trans.header_logout}
                                             </Button>
                                         </SignOutButton>
                                     </div>

@@ -1,5 +1,24 @@
 # Project State - Fawredd Thoughts Assistant
 
+## [UI-006] Language Selector (ES / EN) with User Profile Persistence
+- Status: REVIEW
+- Completed By: Dev Agent
+- Artifacts: db/schema.ts, app/actions/user.ts, lib/translations.ts, lib/language-context.tsx, app/layout.tsx, components/language-toggle.tsx, components/header.tsx, components/journal-composer.tsx, components/journal-history-list.tsx, components/snapshot-sidebar.tsx, app/actions/journal.ts
+
+### Work History
+- **Phase 1 - Discovery:** Reviewed UI-006 spec to understand the language selector feature, DB persistence, and integration.
+- **Phase 2 - Implementation:** Implemented \`db/schema.ts\` update, \`updateUserLanguage\` server action, \`LanguageContext\`, UI \`LanguageToggle\`, applied translations to \`JournalComposer\`, \`Header\`, \`SnapshotSidebar\`, \`JournalHistoryList\`, and integrated the user language into the \`Psychologist\` system prompt.
+- **Phase 3 - Validation:** \`pnpm lint\` -> PASS, \`tsc\` -> PASS, \`build\` -> PASS.
+- **Current State:** Feature implemented.
+
+### Handoff Notes
+- To Quality Agent for manual testing
+
+### Open Questions
+- None
+
+---
+
 ## [RAG-PIPE + RAG-UI] Hybrid Memory (RAG + Narrative State)
 - Status: REVIEW
 - Completed By: Dev Agent

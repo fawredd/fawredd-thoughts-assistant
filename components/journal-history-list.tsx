@@ -6,6 +6,8 @@ import { PsychologistInsight } from './psychologist-insight';
 import { Button } from '@/components/ui/button';
 import { getJournalHistory } from '@/app/actions/journal';
 import { Loader2 } from 'lucide-react';
+import { useLanguage } from '@/lib/language-context';
+import { t } from '@/lib/translations';
 
 interface Entry {
     id: string;
@@ -31,6 +33,8 @@ export function JournalHistoryList({ initialHistory }: JournalHistoryListProps) 
     const [offset, setOffset] = useState(initialHistory.length);
     const [hasMore, setHasMore] = useState(initialHistory.length >= 10);
     const [isLoading, setIsLoading] = useState(false);
+    const { language } = useLanguage();
+    const trans = t[language];
 
     async function handleLoadMore() {
         if (isLoading || !hasMore) return;
@@ -53,7 +57,7 @@ export function JournalHistoryList({ initialHistory }: JournalHistoryListProps) 
     if (history.length === 0) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-50 py-12">
-                <p>Your previous entries will appear here.</p>
+                <p>{trans.feed_empty}</p>
             </div>
         );
     }

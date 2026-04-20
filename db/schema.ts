@@ -6,6 +6,7 @@ export const users = mySchema.table('users', {
     id: uuid('id').primaryKey().defaultRandom(),
     email: text('email').notNull().unique(),
     clerkId: text('clerk_id').notNull().unique(),
+    language: text('language').default('es').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

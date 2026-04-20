@@ -185,6 +185,12 @@ export async function submitJournalEntry(content: string) {
     // 10. Stream Psychologist Response
     const continuityNotes = architectResult.updatedState.continuityNotes ?? '';
     const currentPhase = architectResult.updatedState.timelineContext?.currentPhase ?? '';
+    const language = (user.language as 'es' | 'en') || 'es';
+    const languageDirective = `
+RESPONSE LANGUAGE:
+The user writes in ${language.toUpperCase()}. Always respond in ${language.toUpperCase()}.
+${language === 'es' ? 'Responde siempre en español.' : 'Always respond in English.'}
+`;
 
     const result = streamText({
         model: google("gemini-3.1-flash-lite-preview"),
@@ -213,7 +219,8 @@ If user shows signs of self-harm:
 Encourage seeking professional help gently.
 
 TONE:
-Supportive, grounded, insightful colleague.`,
+Supportive, grounded, insightful colleague.
+${languageDirective}`,
         prompt: `
             CURRENT LIFE SNAPSHOT:
             ${JSON.stringify(architectResult.updatedState, null, 2)}

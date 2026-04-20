@@ -7,11 +7,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { submitJournalEntry } from '@/app/actions/journal';
 import { Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '@/lib/language-context';
+import { t } from '@/lib/translations';
 
 export function JournalComposer() {
     const [input, setInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [aiResponse, setAiResponse] = useState('');
+    const { language } = useLanguage();
+    const trans = t[language];
 
     async function handleSubmit() {
         if (!input.trim() || isSubmitting) return;
@@ -59,7 +63,7 @@ export function JournalComposer() {
             <Card className="shadow-sm border-primary/10 overflow-hidden">
                 <CardContent className="p-4 flex flex-col gap-3">
                     <Textarea
-                        placeholder="Write your thoughts..."
+                        placeholder={trans.composer_placeholder}
                         className="min-h-[150px] border-none focus-visible:ring-0 resize-none p-0 text-md leading-relaxed"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
@@ -72,7 +76,7 @@ export function JournalComposer() {
                             className="rounded-full px-6 transition-all active:scale-95"
                         >
                             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                            Process Entry
+                            {trans.composer_submit}
                         </Button>
                     </div>
                 </CardContent>

@@ -6,15 +6,19 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { type UserState } from '@/lib/ai/state-schema';
 import { BookOpen, Target, Flame, Brain, Users, Activity, Clock } from 'lucide-react';
+import { useLanguage } from '@/lib/language-context';
+import { t } from '@/lib/translations';
 
 export function SnapshotSidebar({ state }: { state: UserState }) {
     const currentPhase = state.timelineContext?.currentPhase;
     const lastMilestone = state.timelineContext?.lastMilestone;
+    const { language } = useLanguage();
+    const trans = t[language];
 
     return (
         <div className="flex flex-col gap-6 p-4 w-full max-w-[400px]">
             <div className="space-y-1">
-                <h2 className="text-2xl font-semibold tracking-tight text-primary">Life Snapshot</h2>
+                <h2 className="text-2xl font-semibold tracking-tight text-primary">{trans.snapshot_title}</h2>
                 <p className="text-sm text-muted-foreground">Current state of your journey.</p>
             </div>
 

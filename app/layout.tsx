@@ -25,15 +25,20 @@ export const metadata: Metadata = {
 };
 
 import { Header } from "@/components/header";
+import { getOrCreateUser } from "@/lib/db-utils";
+import { LanguageProvider } from "@/lib/language-context";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getOrCreateUser();
+  const language = (user?.language as 'es' | 'en') || 'es';
+
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}>
+      <html lang={language} suppressHydrationWarning className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}>
         <body className="min-h-full flex flex-col bg-background">
           <ThemeProvider
             attribute="class"
@@ -41,11 +46,13 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <Header />
-            <main className="flex-1 flex flex-col">
-              {children}
-            </main>
-            <Toaster richColors closeButton position="bottom-right" />
+            <LanguageProvider initialLanguage={language}>
+              <Header />
+              <main className="flex-1 flex flex-col">
+                {children}
+              </main>
+              <Toaster richColors closeButton position="bottom-right" />
+            </LanguageProvider>
           </ThemeProvider>
         </body>
       </html>
