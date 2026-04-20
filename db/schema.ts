@@ -1,4 +1,4 @@
-import { pgSchema, uuid, text, timestamp, integer } from 'drizzle-orm/pg-core';
+import { pgSchema, uuid, text, timestamp, integer, vector } from 'drizzle-orm/pg-core';
 
 export const mySchema = pgSchema("fawredd-ai-thoughts");
 
@@ -13,6 +13,7 @@ export const entries = mySchema.table('entries', {
     id: uuid('id').primaryKey().defaultRandom(),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
     content: text('content').notNull(),
+    embedding: vector('embedding', { dimensions: 3072 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

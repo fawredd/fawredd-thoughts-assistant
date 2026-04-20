@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { submitJournalEntry } from '@/app/actions/journal';
 import { Send, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function JournalComposer() {
     const [input, setInput] = useState('');
@@ -17,6 +18,10 @@ export function JournalComposer() {
 
         setIsSubmitting(true);
         setAiResponse('');
+
+        const toastId = toast.loading('Procesando entrada y recuperando contexto...', {
+            description: 'El asistente está analizando tu reflexión.',
+        });
 
         try {
             const stream = await submitJournalEntry(input);
@@ -34,8 +39,16 @@ export function JournalComposer() {
             }
 
             setInput('');
+            toast.success('Entrada procesada', {
+                id: toastId,
+                description: 'Tu reflexión fue guardada y el contexto actualizado.',
+            });
         } catch (error) {
             console.error('Submission failed:', error);
+            toast.error('Error al procesar la entrada', {
+                id: toastId,
+                description: 'Por favor intenta nuevamente.',
+            });
         } finally {
             setIsSubmitting(false);
         }

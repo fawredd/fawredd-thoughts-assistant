@@ -23,7 +23,8 @@ export default async function IndexPage() {
           <div className="max-w-[500px] p-6 rounded-2xl bg-destructive/5 border border-destructive/10 text-center space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-widest text-destructive/60">Important Disclaimer</p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Data is encrypted in our database using industry standards. However, by using this application, you acknowledge that you do so at your own responsibility. The developer is not responsible for the accuracy of AI assistance, potential data loss, or security breaches. Use at your own risk.
+              Your data is encrypted in our database using industry-standard practices. By using this application, you acknowledge and consent to your data being analyzed by AI models.
+AI-generated insights may not always be accurate, and the developer cannot guarantee the reliability, availability, or security of the service. Use of this application is at your own risk.
             </p>
           </div>
         </div>
@@ -36,12 +37,5 @@ export default async function IndexPage() {
     return <div>Error initializing account. Please try again.</div>;
   }
 
-  return (
-    <div className="flex flex-col min-h-screen bg-background">
-      {/* Main Content */}
-      <main className="flex-1">
-        <JournalFeed />
-      </main>
-    </div>
-  );
+  return <JournalFeed />;
 }

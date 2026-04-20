@@ -1,5 +1,74 @@
 # Project State - Fawredd Thoughts Assistant
 
+## [RAG-PIPE + RAG-UI] Hybrid Memory (RAG + Narrative State)
+- Status: REVIEW
+- Completed By: Dev Agent
+- Artifacts: db/schema.ts, lib/ai/state-schema.ts, lib/ai/state-architect.ts, lib/ai/models.ts, app/actions/journal.ts, app/layout.tsx, components/journal-composer.tsx, components/snapshot-sidebar.tsx, scripts/enable-vector.ts
+
+### Work History
+- **Phase 1 - Discovery:**
+  - Read user-requirements-phase-02.md. Identified 4 work areas: pgvector infra, Zod schema extension, pipeline refactor, and UI updates.
+  - Created Requirement Doc `r-02-001-hybrid-memory.md` [APPROVED].
+  - Created `development` git branch.
+- **Phase 2 - Implementation:**
+  - Enabled `pgvector` extension in Neon DB via `scripts/enable-vector.ts`.
+  - Added `embedding vector(768)` column to `entries` table (raw SQL + Drizzle schema in sync).
+  - Extended `UserStateSchema` (Zod) with `narrativeSummary`, `timelineContext`, and `continuityNotes`.
+  - Updated `DEFAULT_USER_STATE` with initial values for new fields.
+  - Added `embeddingModel` (`text-embedding-004`) to `lib/ai/models.ts`.
+  - Refactored `updateLifeSnapshot()` to accept `ragContext: string[]` and include it in the Architect's prompt.
+  - Refactored `submitJournalEntry()` with full 6-step RAG pipeline: generate embedding → retrieve top-3 via `cosine_distance` → architect update with RAG context → psychologist with continuity notes → persist.
+  - Installed and wired `sonner` Toaster to `app/layout.tsx`.
+  - Added loading/success/error toasts to `JournalComposer`.
+  - Updated `SnapshotSidebar` with new Linea de Tiempo and Resumen Narrativo sections with icons.
+- **Phase 3 - Validation:**
+  - `pnpm run lint` → PASS (0 errors).
+  - `npx tsc --noEmit` → PASS.
+  - `pnpm run build` → PASS.
+- **Current State:** All Phase 02 features implemented and build-validated. Awaiting QA manual testing.
+
+### Handoff Notes
+- Embeddings are generated with `@ai-sdk/google` `embed()` function using `text-embedding-004` model (768 dims).
+- RAG retrieval uses raw SQL with `cosine_distance` operator (`<=>`) from pgvector.
+- Encrypted content is decrypted ephemerally in server action memory for RAG context fragments.
+- Token budget for RAG context: 3 fragments × max 600 chars each.
+- The `embedding` column is `vector(768)` and does NOT store encrypted data — only the numeric embedding.
+
+### Open Questions
+- None.
+
+---
+
+
+
+## [UI-005] Sticky Header, Theme Selector & Responsive Logout Menu
+- Status: REVIEW
+- Completed By: Dev Agent
+- Artifacts: components/header.tsx, components/theme-toggle.tsx, components/theme-provider.tsx, app/layout.tsx, app/page.tsx
+
+### Work History
+- **Phase 1 - Discovery:** 
+  - Analyzed request for a sticky header, theme switching (dark/light), and logout functionality.
+  - Identified requirement for `next-themes` and Clerk integration.
+- **Phase 2 - Implementation:**
+  - Installed `next-themes` and added Shadcn `dropdown-menu` component.
+  - Created `ThemeProvider` and wrapped the application in `app/layout.tsx`.
+  - Implemented `ThemeToggle` with Lucide icons.
+  - Implemented `Header` with a responsive `Sheet` for mobile navigation and `DropdownMenu` for desktop user actions.
+  - Integrated Clerk's `SignOutButton` for secure logout.
+  - Refactored `app/layout.tsx` to handle the global sticky header and main content wrapper.
+  - Simplified `app/page.tsx` by removing redundant layout wrappers.
+- **Phase 3 - Validation:**
+  - Ran `pnpm run build` gate -> PASS.
+  - Verified compilation and static page generation.
+- **Current State:** Header is live and functional. Theme switching works (persists via `next-themes`). Logout is integrated with Clerk.
+
+### Handoff Notes
+- Desktop view uses a circular avatar-style button for user menu.
+- Mobile view uses a "Menu" button that opens a right-side sheet.
+
+---
+
 ## [MGMT-001] Manageability & Security Improvements
 - Status: COMPLETE
 - Completed By: PM Agent

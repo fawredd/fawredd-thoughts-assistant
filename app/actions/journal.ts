@@ -5,11 +5,51 @@ import { entries, userStates, stateUpdatesLog, aiMessagesLog } from '@/db/schema
 import { getOrCreateUser } from '@/lib/db-utils';
 import { updateLifeSnapshot } from '@/lib/ai/state-architect';
 import { DEFAULT_USER_STATE, type UserState } from '@/lib/ai/state-schema';
-import { desc, eq, and } from 'drizzle-orm';
+import { desc, eq, and, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { streamText } from 'ai';
+import { streamText, embed } from 'ai';
 import { google } from '@ai-sdk/google';
 import { encrypt, encryptJson, decryptJson, decrypt } from '@/lib/encryption';
+import { embeddingModel } from '@/lib/ai/models';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Generate a 768-dim embedding for the given text using Gemini */
+async function generateEmbedding(text: string): Promise<number[]> {
+    const { embedding } = await embed({
+        model: embeddingModel,
+        value: text,
+    });
+    return embedding;
+}
+
+/** Fetch top-3 semantically similar past entries using cosine distance */
+async function retrieveRagContext(userId: string, embedding: number[]): Promise<string[]> {
+    const vectorStr = `[${embedding.join(',')}]`;
+
+    // Raw SQL: cosine_distance operator <=>
+    const similar = await db.execute<{ content: string; distance: number }>(
+        sql`
+            SELECT content, embedding <=> ${vectorStr}::vector AS distance
+            FROM "fawredd-ai-thoughts"."entries"
+            WHERE user_id = ${userId}
+              AND embedding IS NOT NULL
+            ORDER BY distance ASC
+            LIMIT 3
+        `
+    );
+
+    // Decrypt and truncate each fragment to keep within token budget (~500 tokens ≈ 350 words ≈ ~2000 chars total for 3 fragments)
+    return (similar.rows ?? []).map((row) =>
+        decrypt(row.content).slice(0, 600)
+    );
+}
+
+// ---------------------------------------------------------------------------
+// CRUD Actions
+// ---------------------------------------------------------------------------
 
 export async function deleteJournalEntry(entryId: string) {
     const user = await getOrCreateUser();
@@ -42,8 +82,6 @@ export async function updateJournalEntry(entryId: string, newContent: string) {
         );
 
     revalidatePath('/');
-    // Note: In a full implementation, we might want to re-run the architect,
-    // but for now we'll just update the text as requested.
 }
 
 export async function getJournalHistory(offset: number = 0, limit: number = 10) {
@@ -57,7 +95,6 @@ export async function getJournalHistory(offset: number = 0, limit: number = 10) 
         offset: offset,
     });
 
-    // Fetch psychologist responses for these entries
     const entryIds = result.map(e => e.id);
     const aiResponses = entryIds.length > 0
         ? await db.select().from(aiMessagesLog).where(
@@ -68,7 +105,6 @@ export async function getJournalHistory(offset: number = 0, limit: number = 10) 
         )
         : [];
 
-    // Map responses to entries and decrypt
     const responseMap = new Map(aiResponses.map(r => [r.entryId, decrypt(r.response)]));
 
     return result.map(entry => ({
@@ -79,26 +115,30 @@ export async function getJournalHistory(offset: number = 0, limit: number = 10) 
     }));
 }
 
-
-
+// ---------------------------------------------------------------------------
+// Main Journal Pipeline
+// ---------------------------------------------------------------------------
 
 export async function submitJournalEntry(content: string) {
     const user = await getOrCreateUser();
     if (!user) throw new Error('Unauthorized');
 
-    // 1. Truncate entry at 2000 chars
+    // 1. Truncate entry
     const truncatedContent = content.slice(0, 2000);
 
-    // 2. Save entry (ENCRYPTED)
+    // 2. Generate embedding (ephemeral — plain text only in Server Action memory)
+    const embedding = await generateEmbedding(truncatedContent);
+
+    // 3. Save entry (encrypted) + embedding (plain vector, safe for search)
     const [newEntry] = await db.insert(entries).values({
         userId: user.id,
         content: encrypt(truncatedContent),
+        embedding,
     }).returning();
 
-    // Revalidate the journal feed to show the new entry immediately
     revalidatePath('/');
 
-    // 3. Fetch latest state
+    // 4. Fetch latest user state
     const [latestState] = await db
         .select()
         .from(userStates)
@@ -106,12 +146,17 @@ export async function submitJournalEntry(content: string) {
         .orderBy(desc(userStates.updatedAt))
         .limit(1);
 
-    const currentState = latestState ? (decryptJson(latestState.stateJson as string) as UserState) : DEFAULT_USER_STATE;
+    const currentState = latestState
+        ? (decryptJson(latestState.stateJson as string) as UserState)
+        : DEFAULT_USER_STATE;
 
-    // 4. Call State Architect
-    const architectResult = await updateLifeSnapshot(currentState, truncatedContent);
+    // 5. RAG: Retrieve 3 most relevant past entries
+    const ragContext = await retrieveRagContext(user.id, embedding);
 
-    // 5. Log State update (ENCRYPTED)
+    // 6. State Architect — update snapshot with RAG context
+    const architectResult = await updateLifeSnapshot(currentState, truncatedContent, ragContext);
+
+    // 7. Log State update (encrypted)
     await db.insert(stateUpdatesLog).values({
         userId: user.id,
         entryId: newEntry.id,
@@ -121,14 +166,14 @@ export async function submitJournalEntry(content: string) {
         model: architectResult.model,
     });
 
-    // 6. Save new state (ENCRYPTED)
+    // 8. Save new state (encrypted)
     await db.insert(userStates).values({
         userId: user.id,
         stateJson: encryptJson(architectResult.updatedState),
         version: (latestState?.version ?? 0) + 1,
     });
 
-    // 7. Log State Architect call (ENCRYPTED)
+    // 9. Log State Architect call
     await db.insert(aiMessagesLog).values({
         userId: user.id,
         agentType: 'architect',
@@ -137,7 +182,10 @@ export async function submitJournalEntry(content: string) {
         tokensUsed: architectResult.tokensUsed,
     });
 
-    // 8. Stream Psychologist Response
+    // 10. Stream Psychologist Response
+    const continuityNotes = architectResult.updatedState.continuityNotes ?? '';
+    const currentPhase = architectResult.updatedState.timelineContext?.currentPhase ?? '';
+
     const result = streamText({
         model: google("gemini-3.1-flash-lite-preview"),
         system: `You are an AI Psychologist Assistant.
@@ -148,12 +196,14 @@ You provide reflective coaching and emotional support.
 
 INPUTS:
 - Latest Journal Entry
-- Current Life Snapshot JSON
+- Current Life Snapshot JSON (includes narrative summary and timeline data)
+- Continuity Notes from previous sessions
 
 GOALS:
 - Provide ONE deep insight OR ONE powerful reflective question
-- Reference the snapshot naturally
+- Reference the snapshot and narrative continuity naturally
 - Avoid repeating facts from the entry
+- Prioritize NARRATIVE CONTINUITY — do not sound repetitive or generic
 - Be empathetic but intellectually honest
 - No generic advice lists
 - Max 120 words
@@ -168,6 +218,9 @@ Supportive, grounded, insightful colleague.`,
             CURRENT LIFE SNAPSHOT:
             ${JSON.stringify(architectResult.updatedState, null, 2)}
 
+            CURRENT PHASE: ${currentPhase}
+            CONTINUITY NOTES: ${continuityNotes}
+
             LATEST JOURNAL ENTRY:
             ${truncatedContent}
         `,
@@ -175,30 +228,29 @@ Supportive, grounded, insightful colleague.`,
         topK: 20,
     });
 
-    // Log the message and get ID to update later
+    // 11. Log psychologist call placeholder (updated after stream)
     const [logEntry] = await db.insert(aiMessagesLog).values({
         userId: user.id,
         entryId: newEntry.id,
         agentType: 'psychologist',
-        prompt: encrypt(`Entry: ${truncatedContent}\nSnapshot: ${JSON.stringify(architectResult.updatedState)}`),
+        prompt: encrypt(`Entry: ${truncatedContent}\nPhase: ${currentPhase}\nSnapshot: ${JSON.stringify(architectResult.updatedState)}`),
         response: encrypt('STREAMING...'),
     }).returning();
 
-    // Let's refine the loop placement
+    // 12. Tee the stream for background logging
     const [logStream, clientStream] = result.textStream.tee();
 
-    // Process logging in background
     (async () => {
-        let text = '';
+        let fullText = '';
         const reader = logStream.getReader();
         try {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                text += value;
+                fullText += value;
             }
             await db.update(aiMessagesLog)
-                .set({ response: encrypt(text) })
+                .set({ response: encrypt(fullText) })
                 .where(eq(aiMessagesLog.id, logEntry.id));
         } catch (error) {
             console.error('Logging stream error:', error);
