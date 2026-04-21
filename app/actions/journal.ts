@@ -42,9 +42,7 @@ async function retrieveRagContext(userId: string, embedding: number[]): Promise<
     );
 
     // Decrypt and truncate each fragment to keep within token budget (~500 tokens ≈ 350 words ≈ ~2000 chars total for 3 fragments)
-    return (similar.rows ?? []).map((row) =>
-        decrypt(row.content).slice(0, 600)
-    );
+    return (similar.rows ?? []).map((row) => decrypt(row.content).slice(0, 600));
 }
 
 // ---------------------------------------------------------------------------
@@ -157,14 +155,14 @@ export async function submitJournalEntry(content: string) {
     const architectResult = await updateLifeSnapshot(currentState, truncatedContent, ragContext);
 
     // 7. Log State update (encrypted)
-    await db.insert(stateUpdatesLog).values({
+    /* await db.insert(stateUpdatesLog).values({
         userId: user.id,
         entryId: newEntry.id,
         oldStateJson: encryptJson(currentState),
         newStateJson: encryptJson(architectResult.updatedState),
         tokensUsed: architectResult.tokensUsed,
         model: architectResult.model,
-    });
+    }); */
 
     // 8. Save new state (encrypted)
     await db.insert(userStates).values({
@@ -174,13 +172,13 @@ export async function submitJournalEntry(content: string) {
     });
 
     // 9. Log State Architect call
-    await db.insert(aiMessagesLog).values({
+    /* await db.insert(aiMessagesLog).values({
         userId: user.id,
         agentType: 'architect',
         prompt: encrypt(truncatedContent),
         response: encryptJson(architectResult.updatedState),
         tokensUsed: architectResult.tokensUsed,
-    });
+    }); */
 
     // 10. Stream Psychologist Response
     const continuityNotes = architectResult.updatedState.continuityNotes ?? '';
@@ -221,7 +219,9 @@ STRICT RULES:
 - Do not repeat facts from the journal entry
 - Build on long-term narrative continuity
 - Highlight patterns, contradictions, emotional dynamics, or value tensions
-- Use uncertainty language (e.g., "It sounds like", "I wonder if", "Could it be")
+- Use uncertainty language (e.g., "It sounds like", "Could it be", "I wonder if")
+- Never start two consecutive responses with the same phrase
+- Vary your opening deliberately
 - Be concise (max 120 words)
 
 CRISIS RULE:
@@ -243,8 +243,8 @@ ${languageDirective}`,
             LATEST JOURNAL ENTRY:
             ${truncatedContent}
         `,
-        topP: 0.1,
-        topK: 20,
+        topP: 0.9,
+        topK: 40,
     });
 
     // 11. Log psychologist call placeholder (updated after stream)

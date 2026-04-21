@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from "next/navigation";
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +17,7 @@ export function JournalComposer() {
     const [aiResponse, setAiResponse] = useState('');
     const { language } = useLanguage();
     const trans = t[language];
+    const router = useRouter();
 
     async function handleSubmit() {
         if (!input.trim() || isSubmitting) return;
@@ -43,6 +45,7 @@ export function JournalComposer() {
             }
 
             setInput('');
+            router.refresh();   
             toast.success(trans.composer_toast_success_title, {
                 id: toastId,
                 description: trans.composer_toast_success_desc,

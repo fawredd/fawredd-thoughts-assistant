@@ -40,8 +40,10 @@ CRITICAL RULES:
 - NEVER exceed array limits (max 7 items)
 - NEVER invent facts not in text
 - Snapshot must be stable over time
-- psychologicalProfile must describe observable tendencies, not diagnoses. 
-  Start with "Tends to" or "Shows a pattern of". Max 240 chars.
+- psychologicalProfile must describe observable tendencies, not diagnoses.
+  If user writes in Spanish, start with "Tiende a" or "Muestra un patrón de".
+  If user writes in English, start with "Tends to" or "Shows a pattern of".
+  Max 240 chars.
 - Detect the user's language from the journal entry. 
   Write all string values (narrativeSummary, continuityNotes, psychologicalProfile, etc.) in that language.
 ---
