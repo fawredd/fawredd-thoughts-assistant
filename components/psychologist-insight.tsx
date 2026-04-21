@@ -3,10 +3,14 @@
 import { Volume2, VolumeX } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
+import { useLanguage } from '@/lib/language-context';
+import { t } from '@/lib/translations';
 
 export function PsychologistInsight({ text }: { text: string }) {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [supported, setSupported] = useState(false);
+    const { language } = useLanguage();
+    const trans = t[language];
 
     useEffect(() => {
         const isSupported = 'speechSynthesis' in window;
@@ -52,7 +56,7 @@ export function PsychologistInsight({ text }: { text: string }) {
         <div className="pl-6 border-l-2 border-primary/10 ml-6 space-y-2 group/insight transition-all">
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 text-primary/60">
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">Psychologist Insight</span>
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">{trans.insight_title}</span>
                 </div>
                 {supported && (
                     <Button
@@ -60,7 +64,7 @@ export function PsychologistInsight({ text }: { text: string }) {
                         size="icon"
                         className="h-6 w-6 rounded-full hover:bg-primary/5 text-primary/40 hover:text-primary transition-colors"
                         onClick={toggleSpeech}
-                        title={isSpeaking ? "Stop reading" : "Read aloud"}
+                        title={isSpeaking ? trans.insight_stop_reading : trans.insight_read_aloud}
                     >
                         {isSpeaking ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
                     </Button>

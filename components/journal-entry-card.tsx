@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Pencil, Trash2, X, Check, Loader2 } from 'lucide-react';
 import { updateJournalEntry, deleteJournalEntry } from '@/app/actions/journal';
 import { useTransition } from 'react';
+import { useLanguage } from '@/lib/language-context';
+import { t } from '@/lib/translations';
 
 interface JournalEntryCardProps {
     id: string;
@@ -18,6 +20,8 @@ export function JournalEntryCard({ id, content, date }: JournalEntryCardProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(content);
     const [isPending, startTransition] = useTransition();
+    const { language } = useLanguage();
+    const trans = t[language];
 
     async function handleUpdate() {
         if (!editedContent.trim() || editedContent === content) {
@@ -32,7 +36,7 @@ export function JournalEntryCard({ id, content, date }: JournalEntryCardProps) {
     }
 
     async function handleDelete() {
-        if (!confirm('Are you sure you want to delete this entry? This cannot be undone.')) return;
+        if (!confirm(trans.entry_card_delete_confirm)) return;
 
         startTransition(async () => {
             await deleteJournalEntry(id);

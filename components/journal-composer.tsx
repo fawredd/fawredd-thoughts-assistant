@@ -23,8 +23,8 @@ export function JournalComposer() {
         setIsSubmitting(true);
         setAiResponse('');
 
-        const toastId = toast.loading('Procesando entrada y recuperando contexto...', {
-            description: 'El asistente está analizando tu reflexión.',
+        const toastId = toast.loading(trans.composer_toast_processing_title, {
+            description: trans.composer_toast_processing_desc,
         });
 
         try {
@@ -43,15 +43,15 @@ export function JournalComposer() {
             }
 
             setInput('');
-            toast.success('Entrada procesada', {
+            toast.success(trans.composer_toast_success_title, {
                 id: toastId,
-                description: 'Tu reflexión fue guardada y el contexto actualizado.',
+                description: trans.composer_toast_success_desc,
             });
         } catch (error) {
             console.error('Submission failed:', error);
-            toast.error('Error al procesar la entrada', {
+            toast.error(trans.composer_toast_error_title, {
                 id: toastId,
-                description: 'Por favor intenta nuevamente.',
+                description: trans.composer_toast_error_desc,
             });
         } finally {
             setIsSubmitting(false);
@@ -91,7 +91,7 @@ export function JournalComposer() {
                             <div className="h-3 w-3 rounded-full bg-primary relative" />
                         </div>
                         <span className="text-sm font-semibold tracking-wide uppercase text-primary/80">
-                            Psychologist Insight
+                            {trans.composer_psychologist_insight}
                         </span>
                     </div>
                     <Card className="bg-gradient-to-br from-primary/5 via-primary/[0.02] to-transparent border-primary/10 shadow-xl backdrop-blur-sm overflow-hidden relative group">
@@ -100,7 +100,7 @@ export function JournalComposer() {
                             <p className="text-lg leading-relaxed text-foreground/90 font-medium whitespace-pre-wrap selection:bg-primary/20">
                                 {aiResponse || (
                                     <span className="flex items-center gap-2 text-muted-foreground italic">
-                                        Processing your thoughts...
+                                        {trans.composer_processing_thoughts}
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                     </span>
                                 )}
