@@ -1,13 +1,14 @@
 import { JournalHistoryList } from './journal-history-list';
 import { getJournalHistory } from '@/app/actions/journal';
 
+
 interface JournalHistoryProps {
     userId: string;
 }
 
 export async function JournalHistory({ userId }: JournalHistoryProps) {
-    // Initial fetch of 10 entries
-    const history = await getJournalHistory(0, 10);
+    // Initial fetch of 3 entries
+    const history = await getJournalHistory(0, 3);
 
-    return <JournalHistoryList initialHistory={history} userId={userId} />;
+    return <JournalHistoryList initialHistory={history} userId={userId} />
 }

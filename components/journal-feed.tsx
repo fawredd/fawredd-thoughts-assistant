@@ -4,7 +4,7 @@ import { JournalComposer } from './journal-composer';
 import { db } from '@/db';
 import { userStates } from '@/db/schema';
 import { desc, eq } from 'drizzle-orm';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Sparkles, Activity, Users, Target } from 'lucide-react';
 import { decryptJson } from '@/lib/encryption';
 import { type UserState } from '@/lib/ai/state-schema';
@@ -59,9 +59,9 @@ export async function JournalFeed() {
                     {snapshot ? (
                         <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-1000">
                             {/* Psychological Profile */}
-                            <Card className="bg-primary/5 border-none shadow-none">
-                                <CardContent className="p-5 space-y-2">
-                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">{trans.sidebar_psychological_profile}</p>
+                            <Card className="bg-primary/5 border-none shadow-none pb-2">
+                                <CardTitle className="px-4"><p className="text-[10px] font-bold text-primary uppercase tracking-wider">{trans.sidebar_psychological_profile}</p></CardTitle>
+                                <CardContent className="px-4">
                                     <p className="text-sm font-medium leading-relaxed italic text-foreground/80">
                                         &quot;{snapshot.psychologicalProfile || trans.feed_building_patterns}&quot;
                                     </p>
@@ -69,34 +69,38 @@ export async function JournalFeed() {
                             </Card>
 
                             {/* Active Goals */}
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-2 px-1 text-primary/70">
-                                    <Target className="h-4 w-4" />
+                            <Card className="bg-primary/5 border-none shadow-none pb-2">
+                                <CardTitle className="flex flex-row px-4 whitespace-nowrap">
+                                    <Target className="h-4 w-4 mr-1" />
                                     <span className="text-[10px] font-bold uppercase tracking-widest">{trans.sidebar_active_goals}</span>
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    {snapshot.objectives?.slice(0, 3).map((obj: string, i: number) => (
-                                        <div key={i} className="text-xs py-2 px-3 bg-accent/30 rounded-lg text-foreground/70 font-medium">
-                                            {obj}
-                                        </div>
-                                    )) || <p className="text-xs italic text-muted-foreground">{trans.feed_analyzing_objectives}</p>}
-                                </div>
-                            </div>
+                                </CardTitle>
+                                <CardContent className="px-4">
+                                    <div className="flex flex-col gap-2">
+                                        {snapshot.objectives?.slice(0, 3).map((obj: string, i: number) => (
+                                            <div key={i} className="text-xs py-2 px-3 bg-accent/30 rounded-lg text-foreground/70 font-medium">
+                                                {obj}
+                                            </div>
+                                        )) || <p className="text-xs italic text-muted-foreground">{trans.feed_analyzing_objectives}</p>}
+                                    </div>
+                                </CardContent>
+                            </Card>
 
                             {/* Social Circle */}
-                            <div className="space-y-3 pt-2">
-                                <div className="flex items-center gap-2 px-1 text-primary/70">
-                                    <Users className="h-4 w-4" />
+                            <Card className="bg-primary/5 border-none shadow-none pb-2">
+                                <CardTitle className="flex flex-row px-4 whitespace-nowrap">
+                                    <Users className="h-4 w-4 mr-1" />
                                     <span className="text-[10px] font-bold uppercase tracking-widest">{trans.sidebar_social_circle}</span>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {snapshot.socialCircle?.slice(0, 5).map((person: { name: string }, i: number) => (
-                                        <div key={i} className="text-[10px] py-1 px-2 border border-primary/10 rounded-full text-foreground/60 font-medium">
-                                            {person.name}
-                                        </div>
-                                    )) || <p className="text-xs italic text-muted-foreground">{trans.feed_mapping_social}</p>}
-                                </div>
-                            </div>
+                                </CardTitle>
+                                <CardContent className="px-4">
+                                    <div className="flex flex-wrap gap-2">
+                                        {snapshot.socialCircle?.slice(0, 5).map((person: { name: string }, i: number) => (
+                                            <div key={i} className="text-[10px] py-1 px-2 border border-primary/10 rounded-full text-foreground/60 font-medium">
+                                                {person.name}
+                                            </div>
+                                        )) || <p className="text-xs italic text-muted-foreground">{trans.feed_mapping_social}</p>}
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
                     ) : (
                         <div className="p-8 border-2 border-dashed border-primary/5 rounded-2xl flex flex-col items-center text-center gap-3">
@@ -104,6 +108,28 @@ export async function JournalFeed() {
                             <p className="text-xs text-muted-foreground">{trans.feed_first_entry}</p>
                         </div>
                     )}
+                    {/* DEV ONLY — remaining snapshot keys */}
+                    {process.env.NODE_ENV === 'development' && snapshot && (() => {
+                        const shownKeys = ['psychologicalProfile', 'objectives', 'socialCircle'];
+                        const remaining = Object.entries(snapshot).filter(([key]) => !shownKeys.includes(key));
+                        return (
+                            <Card className="bg-yellow-500/10 border border-yellow-500/20 shadow-none">
+                                <CardTitle className="px-4">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-600">DEV — Hidden Keys</span>
+                                </CardTitle>
+                                <CardContent className="px-4 flex flex-col gap-3">
+                                    {remaining.map(([key, value]) => (
+                                        <div key={key}>
+                                            <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-600/70 mb-1">{key}</p>
+                                            <pre className="text-[10px] text-foreground/60 whitespace-pre-wrap break-all bg-black/10 rounded p-2">
+                                                {JSON.stringify(value, null, 2)}
+                                            </pre>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        );
+                    })()}
                 </div>
             </aside>
         </div>

@@ -15,7 +15,7 @@ Los análisis generados por la IA pueden no ser siempre precisos, y el desarroll
         composer_toast_success_desc: 'Tu reflexión fue guardada y el contexto actualizado.',
         composer_toast_error_title: 'Error al procesar la entrada',
         composer_toast_error_desc: 'Por favor intenta nuevamente.',
-        composer_psychologist_insight: 'Visión del Psicólogo',
+        composer_psychologist_insight: 'Visión de la AI',
         composer_processing_thoughts: 'Procesando tus pensamientos...',
 
         feed_empty: 'Aún no tienes entradas.',
@@ -27,13 +27,13 @@ Los análisis generados por la IA pueden no ser siempre precisos, y el desarroll
         feed_mapping_social: 'Mapeando círculo social...',
         feed_first_entry: 'Tu primera entrada generará tu resumen de vida.',
 
-        snapshot_title: 'Resumen de Vida',
+        snapshot_title: 'Resumen de AI',
         sidebar_journey_state: 'Estado actual de tu viaje.',
         sidebar_timeline: 'Línea de Tiempo',
         sidebar_current_phase: 'Etapa actual',
         sidebar_last_milestone: 'Último hito',
         sidebar_narrative_summary: 'Resumen Narrativo',
-        sidebar_psychological_profile: 'Perfil Psicológico',
+        sidebar_psychological_profile: 'Perfil según AI',
         sidebar_top_obstacles: 'Principales Obstáculos',
         sidebar_active_goals: 'Objetivos Activos',
         sidebar_social_circle: 'Círculo Social',
@@ -49,7 +49,7 @@ Los análisis generados por la IA pueden no ser siempre precisos, y el desarroll
 
         entry_card_delete_confirm: '¿Estás seguro de que quieres eliminar esta entrada? Esto no se puede deshacer.',
 
-        insight_title: 'Visión del Psicólogo',
+        insight_title: 'Visión de AI',
         insight_stop_reading: 'Dejar de leer',
         insight_read_aloud: 'Leer en voz alta',
 
@@ -74,7 +74,7 @@ AI-generated insights may not always be accurate, and the developer cannot guara
         composer_toast_success_desc: 'Your reflection was saved and context updated.',
         composer_toast_error_title: 'Error processing entry',
         composer_toast_error_desc: 'Please try again.',
-        composer_psychologist_insight: 'Psychologist Insight',
+        composer_psychologist_insight: 'AI Insight',
         composer_processing_thoughts: 'Processing your thoughts...',
 
         feed_empty: 'Your previous entries will appear here.',
@@ -86,13 +86,13 @@ AI-generated insights may not always be accurate, and the developer cannot guara
         feed_mapping_social: 'Mapping social circle...',
         feed_first_entry: 'Your first entry will generate your life snapshot.',
 
-        snapshot_title: 'Life Snapshot',
+        snapshot_title: 'AI Snapshot',
         sidebar_journey_state: 'Current state of your journey.',
         sidebar_timeline: 'Timeline',
         sidebar_current_phase: 'Current Phase',
         sidebar_last_milestone: 'Last Milestone',
         sidebar_narrative_summary: 'Narrative Summary',
-        sidebar_psychological_profile: 'Psychological Profile',
+        sidebar_psychological_profile: 'Profile by AI',
         sidebar_top_obstacles: 'Top Obstacles',
         sidebar_active_goals: 'Active Goals',
         sidebar_social_circle: 'Social Circle',
@@ -108,7 +108,7 @@ AI-generated insights may not always be accurate, and the developer cannot guara
 
         entry_card_delete_confirm: 'Are you sure you want to delete this entry? This cannot be undone.',
 
-        insight_title: 'Psychologist Insight',
+        insight_title: 'AI Insight',
         insight_stop_reading: 'Stop reading',
         insight_read_aloud: 'Read aloud',
 

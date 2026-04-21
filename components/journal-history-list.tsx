@@ -8,6 +8,12 @@ import { getJournalHistory } from '@/app/actions/journal';
 import { Loader2 } from 'lucide-react';
 import { useLanguage } from '@/lib/language-context';
 import { t } from '@/lib/translations';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion"
 
 interface Entry {
     id: string;
@@ -41,8 +47,8 @@ export function JournalHistoryList({ initialHistory }: JournalHistoryListProps) 
 
         setIsLoading(true);
         try {
-            const nextBatch = await getJournalHistory(offset, 10);
-            if (nextBatch.length < 10) {
+            const nextBatch = await getJournalHistory(offset, 3);
+            if (nextBatch.length < 3) {
                 setHasMore(false);
             }
             setHistory((prev) => [...prev, ...nextBatch]);
@@ -63,43 +69,53 @@ export function JournalHistoryList({ initialHistory }: JournalHistoryListProps) 
     }
 
     return (
-        <div className="space-y-8">
-            <h2 className="text-md md:text-2x1 font-bold px-1 text-foreground/80">{trans.history_previous_entries}</h2>
-            <div className="flex flex-col gap-8">
-                {history.map((entry) => (
-                    <div key={entry.id} className="space-y-3">
-                        <JournalEntryCard
-                            id={entry.id}
-                            content={entry.content}
-                            date={dateFormatter.format(new Date(entry.createdAt))}
-                        />
+        <>
+            <Accordion type="single" collapsible>
+                <AccordionItem value="item-1">
+                    <AccordionTrigger>
+                        <h2 className="text-md md:text-2x1 font-bold px-1 text-foreground/80">{trans.history_previous_entries}</h2>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <div className="space-y-8">
+                            <div className="flex flex-col gap-8">
+                                {history.map((entry) => (
+                                    <div key={entry.id} className="space-y-3">
+                                        <JournalEntryCard
+                                            id={entry.id}
+                                            content={entry.content}
+                                            date={dateFormatter.format(new Date(entry.createdAt))}
+                                        />
 
-                        {entry.aiResponse && (
-                            <PsychologistInsight text={entry.aiResponse} />
-                        )}
-                    </div>
-                ))}
-            </div>
+                                        {entry.aiResponse && (
+                                            <PsychologistInsight text={entry.aiResponse} />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
 
-            {hasMore && (
-                <div className="flex justify-center pt-8">
-                    <Button
-                        variant="outline"
-                        onClick={handleLoadMore}
-                        disabled={isLoading}
-                        className="rounded-full px-8 shadow-sm transition-all active:scale-95"
-                    >
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                {trans.history_loading}
-                            </>
-                        ) : (
-                            trans.history_load_more
-                        )}
-                    </Button>
-                </div>
-            )}
-        </div>
+                            {hasMore && (
+                                <div className="flex justify-center pt-8">
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleLoadMore}
+                                        disabled={isLoading}
+                                        className="rounded-full px-8 shadow-sm transition-all active:scale-95"
+                                    >
+                                        {isLoading ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                                {trans.history_loading}
+                                            </>
+                                        ) : (
+                                            trans.history_load_more
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        </>
     );
 }
