@@ -7,7 +7,7 @@ import { desc, eq } from 'drizzle-orm';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Sparkles, Activity, Users, Target } from 'lucide-react';
 import { decryptJson } from '@/lib/encryption';
-import { type UserState } from '@/lib/ai/state-schema';
+import { type UserState, sentimentColorMap } from '@/lib/ai/state-schema';
 import { t } from '@/lib/translations';
 
 export async function JournalFeed() {
@@ -93,11 +93,30 @@ export async function JournalFeed() {
                                 </CardTitle>
                                 <CardContent className="px-4">
                                     <div className="flex flex-wrap gap-2">
-                                        {snapshot.socialCircle?.slice(0, 5).map((person: { name: string }, i: number) => (
-                                            <div key={i} className="text-[10px] py-1 px-2 border border-primary/10 rounded-full text-foreground/60 font-medium">
-                                                {person.name}
+                                        {snapshot.socialCircle?.slice(0, 15).map((person: UserState['socialCircle'][number], i: number) => { 
+                                            const textColor = sentimentColorMap[person.sentiment]
+                                            return (
+                                                <div key={i} className="text-[10px] py-1 px-2 border border-primary/10 rounded-full text-foreground/60 font-medium">
+                                                    <span className={`${textColor}`}>{`${person.name} (${person.relation})`}</span>
+                                                </div>
+                                            )}) || <p className="text-xs italic text-muted-foreground">{trans.feed_mapping_social}</p>}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Activities */}
+                            <Card className="bg-primary/5 border-none shadow-none pb-2">
+                                <CardTitle className="flex flex-row px-4 whitespace-nowrap">
+                                    <Target className="h-4 w-4 mr-1" />
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">{trans.sidebar_activities}</span>
+                                </CardTitle>
+                                <CardContent className="px-4">
+                                    <div className="flex flex-col gap-2">
+                                        {snapshot.activities?.map((obj: string, i: number) => (
+                                            <div key={i} className="text-xs py-2 px-3 bg-accent/30 rounded-lg text-foreground/70 font-medium">
+                                                {obj}
                                             </div>
-                                        )) || <p className="text-xs italic text-muted-foreground">{trans.feed_mapping_social}</p>}
+                                        )) || <p className="text-xs italic text-muted-foreground">{trans.feed_analyzing_objectives}</p>}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -110,7 +129,7 @@ export async function JournalFeed() {
                     )}
                     {/* DEV ONLY — remaining snapshot keys */}
                     {process.env.NODE_ENV === 'development' && snapshot && (() => {
-                        const shownKeys = ['psychologicalProfile', 'objectives', 'socialCircle'];
+                        const shownKeys = ['psychologicalProfile', 'objectives', 'socialCircle', 'activities'];
                         const remaining = Object.entries(snapshot).filter(([key]) => !shownKeys.includes(key));
                         return (
                             <Card className="bg-yellow-500/10 border border-yellow-500/20 shadow-none">

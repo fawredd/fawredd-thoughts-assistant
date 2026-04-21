@@ -44,3 +44,10 @@ export const DEFAULT_USER_STATE: UserState = {
     defenseMechanisms: [],
     unexploredAreas: []
 };
+
+export const sentimentColorMap: Record<UserState['socialCircle'][number]['sentiment'], string> = {
+    positive: 'text-green-500',
+    negative: 'text-red-500',
+    complex: 'text-yellow-500',
+    neutral: 'text-gray-500',
+};
