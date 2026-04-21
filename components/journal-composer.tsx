@@ -59,7 +59,7 @@ export function JournalComposer() {
     }
 
     return (
-        <section className="space-y-2">
+        <section className="space-y-3">
             <Card className="shadow-sm border-primary/10 overflow-hidden py-1">
                 <CardContent className="p-4 flex flex-col gap-3">
                     <Textarea
@@ -68,6 +68,7 @@ export function JournalComposer() {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         disabled={isSubmitting}
+                        maxLength={2000}
                     />
                     <div className="flex justify-end">
                         <Button
@@ -84,8 +85,8 @@ export function JournalComposer() {
 
             {/* AI Response Section */}
             {(aiResponse || isSubmitting) && (
-                <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center gap-3 px-1">
+                <section className="space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex items-center gap-2 px-1">
                         <div className="relative">
                             <div className="h-3 w-3 rounded-full bg-primary animate-ping absolute opacity-75" />
                             <div className="h-3 w-3 rounded-full bg-primary relative" />
@@ -94,7 +95,7 @@ export function JournalComposer() {
                             {trans.composer_psychologist_insight}
                         </span>
                     </div>
-                    <Card className="bg-gradient-to-br from-primary/5 via-primary/[0.02] to-transparent border-primary/10 shadow-xl backdrop-blur-sm overflow-hidden relative group">
+                    <Card className="bg-gradient-to-br from-primary/5 via-primary/[0.02] to-transparent border-primary/10 shadow-xl backdrop-blur-sm overflow-hidden relative group py-2">
                         <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.6))] -z-10" />
                         <CardContent className="p-8">
                             <p className="text-md italic leading-relaxed text-foreground/90 font-medium whitespace-pre-wrap selection:bg-primary/20">
