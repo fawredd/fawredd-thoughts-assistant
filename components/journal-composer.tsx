@@ -97,7 +97,7 @@ export function JournalComposer() {
                     <Card className="bg-gradient-to-br from-primary/5 via-primary/[0.02] to-transparent border-primary/10 shadow-xl backdrop-blur-sm overflow-hidden relative group">
                         <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.6))] -z-10" />
                         <CardContent className="p-8">
-                            <p className="text-lg leading-relaxed text-foreground/90 font-medium whitespace-pre-wrap selection:bg-primary/20">
+                            <p className="text-md italic leading-relaxed text-foreground/90 font-medium whitespace-pre-wrap selection:bg-primary/20">
                                 {aiResponse || (
                                     <span className="flex items-center gap-2 text-muted-foreground italic">
                                         {trans.composer_processing_thoughts}
