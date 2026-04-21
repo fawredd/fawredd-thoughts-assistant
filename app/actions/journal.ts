@@ -25,24 +25,56 @@ async function generateEmbedding(text: string): Promise<number[]> {
     return embedding;
 }
 
-/** Fetch top-3 semantically similar past entries using cosine distance */
+/** Fetch top-3 past entries using cosine distance */
 async function retrieveRagContext(userId: string, embedding: number[]): Promise<string[]> {
     const vectorStr = `[${embedding.join(',')}]`;
 
-    // Raw SQL: cosine_distance operator <=>
-    const similar = await db.execute<{ content: string; distance: number }>(
-        sql`
-            SELECT content, embedding <=> ${vectorStr}::vector AS distance
-            FROM "fawredd-ai-thoughts"."entries"
-            WHERE user_id = ${userId}
-              AND embedding IS NOT NULL
-            ORDER BY distance ASC
-            LIMIT 3
-        `
-    );
+    const [recentResult, similarResult, historicalResult] = await Promise.all([
+        // Most recent entry for continuity
+        db.execute<{ content: string }>(
+            sql`
+                SELECT content
+                FROM "fawredd-ai-thoughts"."entries"
+                WHERE user_id = ${userId}
+                  AND embedding IS NOT NULL
+                ORDER BY created_at DESC
+                LIMIT 1
+            `
+        ),
+        // Semantically similar entry for thematic pattern
+        db.execute<{ content: string }>(
+            sql`
+                SELECT content
+                FROM "fawredd-ai-thoughts"."entries"
+                WHERE user_id = ${userId}
+                  AND embedding IS NOT NULL
+                ORDER BY embedding <=> ${vectorStr}::vector ASC
+                LIMIT 1
+            `
+        ),
+        // Older entry for historical perspective
+        db.execute<{ content: string }>(
+            sql`
+                SELECT content
+                FROM "fawredd-ai-thoughts"."entries"
+                WHERE user_id = ${userId}
+                  AND embedding IS NOT NULL
+                  AND created_at < NOW() - INTERVAL '30 days'
+                ORDER BY RANDOM()
+                LIMIT 1
+            `
+        ),
+    ]);
 
-    // Decrypt and truncate each fragment to keep within token budget (~500 tokens ≈ 350 words ≈ ~2000 chars total for 3 fragments)
-    return (similar.rows ?? []).map((row) => decrypt(row.content).slice(0, 600));
+    return [
+        ...(recentResult.rows ?? []),
+        ...(similarResult.rows ?? []),
+        ...(historicalResult.rows ?? []),
+    ]
+        .filter((row, index, self) => 
+            self.findIndex(r => r.content === row.content) === index
+        )
+        .map(row => decrypt(row.content).slice(0, 600));
 }
 
 // ---------------------------------------------------------------------------
