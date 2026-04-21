@@ -21,25 +21,57 @@ export function PsychologistInsight({ text }: { text: string }) {
     const toggleSpeech = () => {
         if (!supported) return;
 
+        const synth = window.speechSynthesis;
+
+        // 🛑 STOP si ya está hablando
         if (isSpeaking) {
-            window.speechSynthesis.cancel();
+            synth.cancel();
             setIsSpeaking(false);
-        } else {
+            return;
+        }
+
+        const speakWithVoices = () => {
+            const voices = synth.getVoices();
+
+            // 🌎 1. Filtrar voces por idioma
+            const langPrefix = language === 'es' ? 'es' : 'en';
+            const languageVoices = voices.filter(v =>
+                v.lang.toLowerCase().startsWith(langPrefix)
+            );
+
+            // 👩 2. Intentar elegir voz femenina / natural
+            const preferredVoice =
+                languageVoices.find(v =>
+                    v.name.toLowerCase().includes('female') ||
+                    v.name.toLowerCase().includes('woman') ||
+                    v.name.toLowerCase().includes('google') ||
+                    v.name.toLowerCase().includes('microsoft')
+                ) || languageVoices[0] || voices[0]; // fallback seguro
+
             const utterance = new SpeechSynthesisUtterance(text);
 
-            // Try to find a nice female voice for a psychologist feel
-            const voices = window.speechSynthesis.getVoices();
-            const femaleVoice = voices.find(v => v.name.includes('female') || v.name.includes('Google US English'));
-            if (femaleVoice) utterance.voice = femaleVoice;
+            // 🔴 MUY IMPORTANTE → fuerza pronunciación correcta
+            utterance.lang = language === 'es' ? 'es-ES' : 'en-US';
 
-            utterance.rate = 0.9; // Slightly slower for better reflection
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+
+            utterance.rate = 0.9;
             utterance.pitch = 1.0;
 
             utterance.onend = () => setIsSpeaking(false);
             utterance.onerror = () => setIsSpeaking(false);
 
             setIsSpeaking(true);
-            window.speechSynthesis.speak(utterance);
+            synth.speak(utterance);
+        };
+
+        // ⏳ 3. Chrome carga voces async (bug clásico)
+        if (speechSynthesis.getVoices().length === 0) {
+            speechSynthesis.onvoiceschanged = speakWithVoices;
+        } else {
+            speakWithVoices();
         }
     };
 

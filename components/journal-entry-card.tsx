@@ -46,8 +46,8 @@ export function JournalEntryCard({ id, content, date }: JournalEntryCardProps) {
     return (
         <Card className="border-none bg-accent/5 shadow-none group relative overflow-hidden transition-all hover:bg-accent/10">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/20 group-hover:bg-primary/40 transition-colors" />
-            <CardContent className="p-6 space-y-4">
-                <div className="flex justify-between items-center gap-4">
+            <CardContent className="p-4 space-y-1">
+                <div className="flex flex-row justify-between items-center gap-1">
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                         {date}
                     </p>
@@ -109,7 +109,7 @@ export function JournalEntryCard({ id, content, date }: JournalEntryCardProps) {
                         autoFocus
                     />
                 ) : (
-                    <p className="text-lg text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-md text-foreground/90 whitespace-pre-wrap leading-relaxed">
                         {content}
                     </p>
                 )}

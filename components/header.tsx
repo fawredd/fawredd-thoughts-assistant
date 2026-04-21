@@ -37,8 +37,8 @@ export function Header() {
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <div className="flex items-center gap-2">
                     <Link href="/" className="flex items-center space-x-2">
-                        <span className="text-xl font-bold tracking-tight text-primary">
-                            Fawredd <span className="text-muted-foreground font-medium">Thoughts</span>
+                        <span className="text-sm font-bold tracking-tight text-primary">
+                            Fawredd - <span className="text-muted-foreground font-small md:font-medium">Thoughts</span>
                         </span>
                     </Link>
                 </div>

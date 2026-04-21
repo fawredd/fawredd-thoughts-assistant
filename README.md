@@ -4,11 +4,12 @@ An AI-powered journaling companion designed for longitudinal memory and reflecti
 
 ## 🚀 Features
 
-- **Deep Journaling**: A peaceful interface for capturing thoughts and reflections.
-- **AI Psychologist Insight**: Real-time reflective coaching and deep insights based on your entries.
-- **Life Snapshot**: An automated summary of your current life state, including objectives, psychological profile, and social circle.
-- **Secure & Encrypted**: All journal entries and AI-generated insights are encrypted at rest in the database.
-- **Longitudinal Memory**: The AI maintains context across multiple entries to provide more relevant coaching.
+- **Deep Journaling**: A peaceful, "Calm Minimal" interface for capturing thoughts and reflections.
+- **Hybrid Memory System (RAG + Narrative State)**: Utilizes pgvector for semantic search of past entries alongside a continuous "Life Snapshot" for longitudinal memory.
+- **Active Socratic AI Persona**: The AI Psychologist acts as an analytical clinical partner, providing real-time reflective coaching through critical inquiry and constructive confrontation.
+- **Multi-Language Support**: Seamless UI toggle and dynamic AI response adaptation for both English and Spanish.
+- **Life Snapshot**: An automated summary of your current life state, tracking goals, psychological patterns, defense mechanisms, and social circles.
+- **Secure & Encrypted**: All journal entries, AI-generated insights, and life snapshots are encrypted at rest in the database.
 
 ## 🛠 Tech Stack
 
@@ -22,11 +23,12 @@ An AI-powered journaling companion designed for longitudinal memory and reflecti
 
 ## 🏗 Architecture
 
-The application follows a specialized AI pipeline:
+The application follows a specialized AI pipeline utilizing a multi-agent framework:
 1. **User Input**: User submits a journal entry.
-2. **State Architect**: A dedicated agent (Gemini) updates the user's "Life Snapshot" JSON based on the new entry and previous state.
-3. **Psychologist Agent**: Another agent provides a reflective response using the updated snapshot for deep context.
-4. **Encryption Layer**: Data is encrypted before being stored in the database to ensure privacy.
+2. **RAG Retrieval**: The system queries pgvector to retrieve semantically relevant past entries to inform the context.
+3. **State Architect**: A dedicated agent (Gemini) updates the user's "Life Snapshot" JSON based on the new entry and previous state.
+4. **Psychologist Agent**: Another agent provides a reflective response streamed seamlessly via Server Actions, using the updated snapshot and RAG context.
+5. **Encryption Layer**: Data is encrypted before being stored in the database to ensure privacy.
 
 ## 🚦 Getting Started
 

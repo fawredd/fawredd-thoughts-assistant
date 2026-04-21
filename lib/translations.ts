@@ -1,5 +1,12 @@
 export const t = {
     es: {
+        landing_title: 'Fawredd - Pensamientos',
+        landing_description: 'Util para organizar tus pensamientos con IA, diseñado para la memoria a largo plazo y el coaching reflexivo.',
+        landing_button:'Comenzar',
+        landing_warning_title:'Aviso importante',
+        landing_warning:`Sus datos están cifrados en nuestra base de datos siguiendo las prácticas estándar de la industria. Al utilizar esta aplicación, usted reconoce y acepta que sus datos sean analizados por modelos de inteligencia artificial.
+Los análisis generados por la IA pueden no ser siempre precisos, y el desarrollador no puede garantizar la fiabilidad, disponibilidad o seguridad del servicio. El uso de esta aplicación es bajo su propia responsabilidad.`,
+
         composer_placeholder: 'Escribe tu pensamiento...',
         composer_submit: 'Procesar Entrada',
         composer_toast_processing_title: 'Procesando entrada y recuperando contexto...',
@@ -52,6 +59,13 @@ export const t = {
         header_home: 'Inicio',
     },
     en: {
+        landing_title: 'Fawredd - Thoughts',
+        landing_description: 'Your AI-powered journaling companion for longitudinal memory and reflective coaching.',
+        landing_button:'Comenzar',
+        landing_warning_title:'Important Disclaimer',
+        landing_warning:`Your data is encrypted in our database using industry-standard practices. By using this application, you acknowledge and consent to your data being analyzed by AI models.
+AI-generated insights may not always be accurate, and the developer cannot guarantee the reliability, availability, or security of the service. Use of this application is at your own risk.`,
+
         composer_placeholder: 'Write your thoughts...',
         composer_submit: 'Process Entry',
         composer_toast_processing_title: 'Processing entry and retrieving context...',

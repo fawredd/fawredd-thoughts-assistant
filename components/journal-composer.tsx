@@ -59,8 +59,8 @@ export function JournalComposer() {
     }
 
     return (
-        <section className="space-y-8">
-            <Card className="shadow-sm border-primary/10 overflow-hidden">
+        <section className="space-y-2">
+            <Card className="shadow-sm border-primary/10 overflow-hidden py-1">
                 <CardContent className="p-4 flex flex-col gap-3">
                     <Textarea
                         placeholder={trans.composer_placeholder}

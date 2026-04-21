@@ -64,7 +64,7 @@ export function JournalHistoryList({ initialHistory }: JournalHistoryListProps) 
 
     return (
         <div className="space-y-8">
-            <h2 className="text-2xl font-bold px-1 text-foreground/80">{trans.history_previous_entries}</h2>
+            <h2 className="text-md md:text-2x1 font-bold px-1 text-foreground/80">{trans.history_previous_entries}</h2>
             <div className="flex flex-col gap-8">
                 {history.map((entry) => (
                     <div key={entry.id} className="space-y-3">

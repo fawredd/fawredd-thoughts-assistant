@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fawredd Thoughts Assistant",
+  title: "Fawredd - Thoughts Assistant",
   description: "AI-assisted journaling with longitudinal memory",
 };
 
