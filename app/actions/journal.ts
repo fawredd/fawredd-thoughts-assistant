@@ -101,15 +101,18 @@ export async function updateJournalEntry(entryId: string, newContent: string) {
     if (!user) throw new Error('Unauthorized');
 
     const truncatedContent = newContent.slice(0, 2000);
+    // 2. Generate embedding (ephemeral — plain text only in Server Action memory)
+    const embedding = await generateEmbedding(truncatedContent);
 
-    await db.update(entries)
-        .set({ content: encrypt(truncatedContent) })
+    // 3. Save entry (encrypted) + embedding (plain vector, safe for search)
+    const [updatedEntry] = await db.update(entries)
+        .set({ content: encrypt(truncatedContent), embedding: embedding })
         .where(
             and(
                 eq(entries.id, entryId),
                 eq(entries.userId, user.id)
             )
-        );
+        ).returning();
 
     revalidatePath('/');
 }
@@ -145,8 +148,9 @@ export async function getJournalHistory(offset: number = 0, limit: number = 10) 
     }));
 }
 
+
 // ---------------------------------------------------------------------------
-// Main Journal Pipeline
+// Insert Journal Pipeline
 // ---------------------------------------------------------------------------
 
 export async function submitJournalEntry(content: string) {
@@ -165,8 +169,6 @@ export async function submitJournalEntry(content: string) {
         content: encrypt(truncatedContent),
         embedding,
     }).returning();
-
-    revalidatePath('/');
 
     // 4. Fetch latest user state
     const [latestState] = await db
@@ -187,14 +189,14 @@ export async function submitJournalEntry(content: string) {
     const architectResult = await updateLifeSnapshot(currentState, truncatedContent, ragContext);
 
     // 7. Log State update (encrypted)
-    /* await db.insert(stateUpdatesLog).values({
+    await db.insert(stateUpdatesLog).values({
         userId: user.id,
         entryId: newEntry.id,
         oldStateJson: encryptJson(currentState),
         newStateJson: encryptJson(architectResult.updatedState),
         tokensUsed: architectResult.tokensUsed,
         model: architectResult.model,
-    }); */
+    });
 
     // 8. Save new state (encrypted)
     await db.insert(userStates).values({
@@ -204,13 +206,13 @@ export async function submitJournalEntry(content: string) {
     });
 
     // 9. Log State Architect call
-    /* await db.insert(aiMessagesLog).values({
+    await db.insert(aiMessagesLog).values({
         userId: user.id,
         agentType: 'architect',
         prompt: encrypt(truncatedContent),
         response: encryptJson(architectResult.updatedState),
         tokensUsed: architectResult.tokensUsed,
-    }); */
+    });
 
     // 10. Stream Psychologist Response
     const continuityNotes = architectResult.updatedState.continuityNotes ?? '';
@@ -224,28 +226,34 @@ ${language === 'es' ? 'Responde siempre en español.' : 'Always respond in Engli
 
     const result = streamText({
         model: google("gemini-3.1-flash-lite-preview"),
-        system: `You are an AI Reflective Psychology Assistant.
-
+        system: `
+---
+You are an AI Reflective Psychology Assistant.
+---
 ROLE BOUNDARY:
 You are NOT a therapist and you do NOT provide therapy, diagnosis, treatment, coping strategies, or mental health advice.
 You act as a reflective thinking partner that helps the user notice patterns, tensions and perspectives in their own narrative.
-
+---
 YOUR FUNCTION:
 You help users think — not fix.
 You reflect — not prescribe.
 You ask — not instruct.
-
+You acknowledge what's real — positive or negative.
+---
 INPUTS:
 - Latest Journal Entry
 - Current Life Snapshot JSON (long-term narrative + timeline)
 - Continuity Notes from previous sessions
-
+---
 PRIMARY GOAL:
 Produce ONLY ONE of the following:
 • one deep psychological insight, OR
 • one powerful reflective question
-
+---
 STRICT RULES:
+- When the snapshot or entry shows genuine progress or resolution, 
+  acknowledging it IS valid — but do so specifically, not generically.
+  ("You've consistently followed through on X" not "You're doing great")
 - No advice, tips, strategies or action lists
 - No generic self-help language
 - Do not repeat facts from the journal entry
@@ -255,16 +263,16 @@ STRICT RULES:
 - Never start two consecutive responses with the same phrase
 - Vary your opening deliberately
 - Be concise (max 120 words)
-
+---
 CRISIS RULE:
-If the user shows signs of self-harm or crisis:
-Gently encourage seeking professional help and support resources.
-
+If the user shows signs of self-harm or crisis: encourage seeking professional help and support resources.
+---
 TONE:
 Empathetic, calm, intellectually honest, thoughtful colleague.
 Not clinical. Not motivational. Not preachy.
-
-${languageDirective}`,
+---
+${languageDirective}
+---`,
         prompt: `
             CURRENT LIFE SNAPSHOT:
             ${JSON.stringify(architectResult.updatedState, null, 2)}
@@ -286,9 +294,9 @@ ${languageDirective}`,
         agentType: 'psychologist',
         prompt: encrypt(`Entry: ${truncatedContent}\nPhase: ${currentPhase}\nSnapshot: ${JSON.stringify(architectResult.updatedState)}`),
         response: encrypt('STREAMING...'),
-    }).returning();
+    }).returning(); 
 
-    // 12. Tee the stream for background logging
+    //  12. Tee the stream for background logging
     const [logStream, clientStream] = result.textStream.tee();
 
     (async () => {
@@ -310,5 +318,6 @@ ${languageDirective}`,
         }
     })();
 
-    return clientStream;
+    revalidatePath('/');
+    return clientStream; 
 }

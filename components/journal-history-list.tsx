@@ -41,6 +41,13 @@ export function JournalHistoryList({ initialHistory }: JournalHistoryListProps) 
     const [isLoading, setIsLoading] = useState(false);
     const { language } = useLanguage();
     const trans = t[language];
+    // Keep track of the prop we last synced with
+    const [prevInitialProp, setPrevInitialProp] = useState(initialHistory);
+    // If the server passes us fresh data (e.g. from revalidatePath)
+    if (initialHistory !== prevInitialProp) {
+        setPrevInitialProp(initialHistory);
+        setHistory(initialHistory);
+    }
 
     async function handleLoadMore() {
         if (isLoading || !hasMore) return;
