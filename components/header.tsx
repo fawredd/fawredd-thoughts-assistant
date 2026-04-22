@@ -4,12 +4,12 @@ import Link from "next/link"
 import { SignOutButton, useUser } from "@clerk/nextjs"
 import { Menu, X, LogOut, Settings, User } from "lucide-react"
 import { useState } from "react"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageToggle } from "@/components/language-toggle"
 import { useLanguage } from "@/lib/language-context"
 import { t } from "@/lib/translations"
+
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -85,7 +85,7 @@ export function Header() {
                                         <span>{trans.header_settings}</span>
                                     </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
+                                                    <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer">
                                     <SignOutButton>
                                         <div className="flex w-full items-center">

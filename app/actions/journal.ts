@@ -205,6 +205,9 @@ export async function submitJournalEntry(content: string) {
         version: (latestState?.version ?? 0) + 1,
     });
 
+    //8.1 retrieve las 3 ai responses phrase starts to include in next prompt and let ai choose how to starts new phrase
+    const recentAIResponsesStartings =  (await getJournalHistory(1,4)).map((entry)=>entry.aiResponse?.slice(0,20)) || []
+    
     // 9. Log State Architect call
     await db.insert(aiMessagesLog).values({
         userId: user.id,
@@ -260,8 +263,7 @@ STRICT RULES:
 - Build on long-term narrative continuity
 - Highlight patterns, contradictions, emotional dynamics, or value tensions
 - Use uncertainty language (e.g., "It sounds like", "Could it be", "I wonder if")
-- Never start two consecutive responses with the same phrase
-- Vary your opening deliberately
+- YOUR LAST RESPONSES STARTED WITH: ${recentAIResponsesStartings}. Try to vary the opening format this time.
 - Be concise (max 120 words)
 ---
 CRISIS RULE:
