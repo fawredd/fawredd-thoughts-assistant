@@ -25,6 +25,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet"
+import { InstallButton } from "./install-button"
 
 export function Header() {
     const { isSignedIn, user } = useUser()
@@ -158,6 +159,7 @@ export function Header() {
                                     >
                                         {trans.header_settings}
                                     </Link>
+                                    <InstallButton />
                                 </nav>
                             </div>
 

@@ -1,41 +1,42 @@
+"use client"
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { useState } from 'react';
+import { Button } from './ui/button';
 
-export default function InstallButton() {
-    const { isInstallable, install, isIOS, isInstalled } = useInstallPrompt();
+export function InstallButton() {
+    const { isInstallable, install, isIOS } = useInstallPrompt();
     const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
-
-    {/* Android/Chrome — prompt nativo */ }
-    {
-        isInstallable && (
-            <button onClick={install}>
+    if (isInstallable) {
+        return (
+            <Button onClick={install} variant="link" size="xs">
                 📲 Instalar app
-            </button>
-        )
+            </Button>
+        );
     }
 
-    {/* iOS — instrucciones manuales */ }
-    {
-        isIOS && !isInstallable && (
+    if (isIOS) {
+        return (
             <>
-                <button onClick={() => setShowIOSInstructions(true)}>
+                <Button onClick={() => setShowIOSInstructions(true)} variant="link" size="xs">
                     📲 Instalar app
-                </button>
+                </Button>
 
                 {showIOSInstructions && (
                     <div>
                         <p>Para instalar en tu iPhone:</p>
                         <ol>
                             <li>Tocá el ícono de compartir ↑</li>
-                            <li>Seleccioná "Agregar a pantalla de inicio"</li>
+                            <li>Seleccioná &quot;Agregar a pantalla de inicio&quot;</li>
                         </ol>
-                        <button onClick={() => setShowIOSInstructions(false)}>
+                        <Button onClick={() => setShowIOSInstructions(false)} variant="link" size="xs">
                             Cerrar
-                        </button>
+                        </Button>
                     </div>
                 )}
             </>
-        )
+        );
     }
+
+    return null;
 }
