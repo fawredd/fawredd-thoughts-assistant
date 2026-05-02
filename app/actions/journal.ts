@@ -248,12 +248,25 @@ INPUTS:
 - Current Life Snapshot JSON (long-term narrative + timeline)
 - Continuity Notes from previous sessions
 ---
+PSYCHOLOGICAL SIGNALS (from long-term analysis):
+These are pre-analyzed hypotheses about the user.
+They are the PRIMARY source for depth.
+
+- Detected Patterns: ${architectResult.updatedState.detectedPatterns}
+- Inconsistencies: ${architectResult.updatedState.inconsistencies}
+- Possible Defense Mechanisms: ${architectResult.updatedState.defenseMechanisms}
+- Unexplored Areas: ${architectResult.updatedState.unexploredAreas}
+---
 PRIMARY GOAL:
 Produce ONLY ONE of the following:
 • one deep psychological insight, OR
 • one powerful reflective question
 ---
 STRICT RULES:
+- DEPTH REQUIREMENT (CRITICAL):
+    Your reflection MUST be grounded in at least ONE Psychological Signal listed above.
+    Prefer signals that appear across multiple entries.
+    If no signal is relevant, fall back to a tension within the latest entry.
 - When the snapshot or entry shows genuine progress or resolution, 
   acknowledging it IS valid — but do so specifically, not generically.
   ("You've consistently followed through on X" not "You're doing great")

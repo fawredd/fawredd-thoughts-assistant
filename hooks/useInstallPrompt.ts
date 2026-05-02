@@ -1,3 +1,4 @@
+'use client'
 // hooks/useInstallPrompt.ts
 import { useState, useEffect } from 'react';
 interface BeforeInstallPromptEvent extends Event {

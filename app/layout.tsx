@@ -27,6 +27,8 @@ export const metadata: Metadata = {
 import { Header } from "@/components/header";
 import { getOrCreateUser } from "@/lib/db-utils";
 import { LanguageProvider } from "@/lib/language-context";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
 export default async function RootLayout({
   children,
@@ -47,7 +49,9 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <LanguageProvider initialLanguage={language}>
-              <Header />
+              <Suspense fallback={<div className="flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                <Header />
+              </Suspense>
               <main className="flex-1 flex flex-col">
                 {children}
               </main>
