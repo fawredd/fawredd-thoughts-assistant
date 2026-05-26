@@ -8,9 +8,9 @@ import { DEFAULT_USER_STATE, type UserState } from '@/lib/ai/state-schema';
 import { desc, eq, and, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { streamText, embed } from 'ai';
-import { google } from '@ai-sdk/google';
+//import { google } from '@ai-sdk/google';
 import { encrypt, encryptJson, decryptJson, decrypt } from '@/lib/encryption';
-import { embeddingModel } from '@/lib/ai/models';
+import { embeddingModel,stateArchitectModel } from '@/lib/ai/models';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -228,7 +228,7 @@ ${language === 'es' ? 'Responde siempre en español.' : 'Always respond in Engli
 `;
 
     const result = streamText({
-        model: google("gemini-3.1-flash-lite-preview"),
+        model: stateArchitectModel,
         system: `
 ---
 You are an AI Reflective Psychology Assistant.
