@@ -37,7 +37,7 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 export function JournalHistoryList({ initialHistory }: JournalHistoryListProps) {
     const [history, setHistory] = useState<Entry[]>(initialHistory);
     const [offset, setOffset] = useState(initialHistory.length);
-    const [hasMore, setHasMore] = useState(initialHistory.length >= 10);
+    const [hasMore, setHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const { language } = useLanguage();
     const trans = t[language];
