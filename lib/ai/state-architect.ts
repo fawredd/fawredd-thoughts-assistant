@@ -38,6 +38,7 @@ Do not invent. If evidence is thin, leave the array short or empty.
 ---
 CRITICAL RULES:
 - NEVER exceed array limits (max 7 items)
+- Keep all schema-constrained strings within their limits; compress rather than truncate.
 - NEVER invent facts not in text
 - Snapshot must be stable over time
 - psychologicalProfile must describe observable tendencies, not diagnoses.
@@ -59,14 +60,15 @@ export async function updateLifeSnapshot(currentState: UserState, newEntry: stri
             schema: UserStateSchema,
             system: STATE_ARCHITECT_SYSTEM_PROMPT,
             prompt: `
-CURRENT STATE:
+<CURRENT STATE>
 ${JSON.stringify(currentState, null, 2)}
-
-HYBRID MEMORY (RAG CONTEXT):
+</CURRENT STATE>
+<HYBRID MEMORY (RAG CONTEXT)>
 ${ragContext.length > 0 ? ragContext.join('\n---\n') : 'No prior relevant context.'}
-
-NEW ENTRY:
+</HYBRID MEMORY (RAG CONTEXT)>
+<NEW ENTRY>
 ${newEntry}
+</NEW ENTRY>
       `,
         });
 
