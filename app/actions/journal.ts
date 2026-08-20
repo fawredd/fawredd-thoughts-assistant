@@ -1,16 +1,28 @@
-'use server';
+"use server";
 
-import { db } from '@/db';
-import { entries, userStates, stateUpdatesLog, aiMessagesLog } from '@/db/schema';
-import { getOrCreateUser } from '@/lib/db-utils';
-import { updateLifeSnapshot } from '@/lib/ai/state-architect';
-import { DEFAULT_USER_STATE, type UserState } from '@/lib/ai/state-schema';
-import { desc, eq, and, sql } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
-import { streamText, embed } from 'ai';
+import { db } from "@/db";
+import {
+  entries,
+  userStates,
+  stateUpdatesLog,
+  aiMessagesLog,
+} from "@/db/schema";
+import { getOrCreateUser } from "@/lib/db-utils";
+import { updateLifeSnapshot } from "@/lib/ai/state-architect";
+import { DEFAULT_USER_STATE, type UserState } from "@/lib/ai/state-schema";
+import { desc, eq, and, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { streamText, embed } from "ai";
 //import { google } from '@ai-sdk/google';
-import { encrypt, encryptJson, decryptJson, decrypt } from '@/lib/encryption';
-import { embeddingModel,stateArchitectModel } from '@/lib/ai/models';
+import { encrypt, encryptJson, decryptJson, decrypt } from "@/lib/encryption";
+import { embeddingModel, stateArchitectModel } from "@/lib/ai/models";
+import {
+  claimJournalSubmission,
+  completeJournalSubmission,
+  failJournalSubmission,
+  streamFromText,
+  waitForJournalSubmission,
+} from "@/lib/idempotency";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -18,43 +30,46 @@ import { embeddingModel,stateArchitectModel } from '@/lib/ai/models';
 
 /** Generate a 768-dim embedding for the given text using Gemini */
 async function generateEmbedding(text: string): Promise<number[]> {
-    const { embedding } = await embed({
-        model: embeddingModel,
-        value: text,
-    });
-    return embedding;
+  const { embedding } = await embed({
+    model: embeddingModel,
+    value: text,
+  });
+  return embedding;
 }
 
 /** Fetch top-3 past entries using cosine distance */
-async function retrieveRagContext(userId: string, embedding: number[]): Promise<string[]> {
-    const vectorStr = `[${embedding.join(',')}]`;
+async function retrieveRagContext(
+  userId: string,
+  embedding: number[],
+): Promise<string[]> {
+  const vectorStr = `[${embedding.join(",")}]`;
 
-    const [recentResult, similarResult, historicalResult] = await Promise.all([
-        // Most recent entry for continuity
-        db.execute<{ content: string }>(
-            sql`
+  const [recentResult, similarResult, historicalResult] = await Promise.all([
+    // Most recent entry for continuity
+    db.execute<{ content: string }>(
+      sql`
                 SELECT content
                 FROM "fawredd-ai-thoughts"."entries"
                 WHERE user_id = ${userId}
                   AND embedding IS NOT NULL
                 ORDER BY created_at DESC
                 LIMIT 1
-            `
-        ),
-        // Semantically similar entry for thematic pattern
-        db.execute<{ content: string }>(
-            sql`
+            `,
+    ),
+    // Semantically similar entry for thematic pattern
+    db.execute<{ content: string }>(
+      sql`
                 SELECT content
                 FROM "fawredd-ai-thoughts"."entries"
                 WHERE user_id = ${userId}
                   AND embedding IS NOT NULL
                 ORDER BY embedding <=> ${vectorStr}::vector ASC
                 LIMIT 1
-            `
-        ),
-        // Older entry for historical perspective
-        db.execute<{ content: string }>(
-            sql`
+            `,
+    ),
+    // Older entry for historical perspective
+    db.execute<{ content: string }>(
+      sql`
                 SELECT content
                 FROM "fawredd-ai-thoughts"."entries"
                 WHERE user_id = ${userId}
@@ -62,19 +77,20 @@ async function retrieveRagContext(userId: string, embedding: number[]): Promise<
                   AND created_at < NOW() - INTERVAL '30 days'
                 ORDER BY RANDOM()
                 LIMIT 1
-            `
-        ),
-    ]);
+            `,
+    ),
+  ]);
 
-    return [
-        ...(recentResult.rows ?? []),
-        ...(similarResult.rows ?? []),
-        ...(historicalResult.rows ?? []),
-    ]
-        .filter((row, index, self) => 
-            self.findIndex(r => r.content === row.content) === index
-        )
-        .map(row => decrypt(row.content).slice(0, 600));
+  return [
+    ...(recentResult.rows ?? []),
+    ...(similarResult.rows ?? []),
+    ...(historicalResult.rows ?? []),
+  ]
+    .filter(
+      (row, index, self) =>
+        self.findIndex((r) => r.content === row.content) === index,
+    )
+    .map((row) => decrypt(row.content).slice(0, 600));
 }
 
 // ---------------------------------------------------------------------------
@@ -82,81 +98,95 @@ async function retrieveRagContext(userId: string, embedding: number[]): Promise<
 // ---------------------------------------------------------------------------
 
 export async function deleteJournalEntry(entryId: string) {
-    const user = await getOrCreateUser();
-    if (!user) throw new Error('Unauthorized');
+  const user = await getOrCreateUser();
+  if (!user) throw new Error("Unauthorized");
 
-    await db.delete(entries)
-        .where(
-            and(
-                eq(entries.id, entryId),
-                eq(entries.userId, user.id)
-            )
-        );
+  await db
+    .delete(entries)
+    .where(and(eq(entries.id, entryId), eq(entries.userId, user.id)));
 
-    revalidatePath('/');
+  revalidatePath("/");
 }
 
 export async function updateJournalEntry(entryId: string, newContent: string) {
-    const user = await getOrCreateUser();
-    if (!user) throw new Error('Unauthorized');
+  const user = await getOrCreateUser();
+  if (!user) throw new Error("Unauthorized");
 
-    const truncatedContent = newContent.slice(0, 2000);
-    // 2. Generate embedding (ephemeral — plain text only in Server Action memory)
-    const embedding = await generateEmbedding(truncatedContent);
+  const truncatedContent = newContent.slice(0, 2000);
+  // 2. Generate embedding (ephemeral — plain text only in Server Action memory)
+  const embedding = await generateEmbedding(truncatedContent);
 
-    // 3. Save entry (encrypted) + embedding (plain vector, safe for search)
-    const [updatedEntry] = await db.update(entries)
-        .set({ content: encrypt(truncatedContent), embedding: embedding })
-        .where(
-            and(
-                eq(entries.id, entryId),
-                eq(entries.userId, user.id)
-            )
-        ).returning();
+  // 3. Save entry (encrypted) + embedding (plain vector, safe for search)
+  const [updatedEntry] = await db
+    .update(entries)
+    .set({ content: encrypt(truncatedContent), embedding: embedding })
+    .where(and(eq(entries.id, entryId), eq(entries.userId, user.id)))
+    .returning();
 
-    revalidatePath('/');
+  revalidatePath("/");
 }
 
-export async function getJournalHistory(offset: number = 0, limit: number = 10) {
-    const user = await getOrCreateUser();
-    if (!user) throw new Error('Unauthorized');
+export async function getJournalHistory(
+  offset: number = 0,
+  limit: number = 10,
+) {
+  const user = await getOrCreateUser();
+  if (!user) throw new Error("Unauthorized");
 
-    const result = await db.query.entries.findMany({
-        where: eq(entries.userId, user.id),
-        orderBy: [desc(entries.createdAt)],
-        limit: limit,
-        offset: offset,
-    });
+  const result = await db.query.entries.findMany({
+    where: eq(entries.userId, user.id),
+    orderBy: [desc(entries.createdAt)],
+    limit: limit,
+    offset: offset,
+  });
 
-    const entryIds = result.map(e => e.id);
-    const aiResponses = entryIds.length > 0
-        ? await db.select().from(aiMessagesLog).where(
+  const entryIds = result.map((e) => e.id);
+  const aiResponses =
+    entryIds.length > 0
+      ? await db
+          .select()
+          .from(aiMessagesLog)
+          .where(
             and(
-                eq(aiMessagesLog.userId, user.id),
-                eq(aiMessagesLog.agentType, 'psychologist'),
-            )
-        )
-        : [];
+              eq(aiMessagesLog.userId, user.id),
+              eq(aiMessagesLog.agentType, "psychologist"),
+            ),
+          )
+      : [];
 
-    const responseMap = new Map(aiResponses.map(r => [r.entryId, decrypt(r.response)]));
+  const responseMap = new Map(
+    aiResponses.map((r) => [r.entryId, decrypt(r.response)]),
+  );
 
-    return result.map(entry => ({
-        id: entry.id,
-        content: decrypt(entry.content),
-        createdAt: entry.createdAt,
-        aiResponse: responseMap.get(entry.id) || null
-    }));
+  return result.map((entry) => ({
+    id: entry.id,
+    content: decrypt(entry.content),
+    createdAt: entry.createdAt,
+    aiResponse: responseMap.get(entry.id) || null,
+  }));
 }
-
 
 // ---------------------------------------------------------------------------
 // Insert Journal Pipeline
 // ---------------------------------------------------------------------------
 
-export async function submitJournalEntry(content: string) {
-    const user = await getOrCreateUser();
-    if (!user) throw new Error('Unauthorized');
+export async function submitJournalEntry(
+  content: string,
+  idempotencyKey: string,
+) {
+  const user = await getOrCreateUser();
+  if (!user) throw new Error("Unauthorized");
 
+  const { claimed, key } = await claimJournalSubmission(
+    user.id,
+    idempotencyKey,
+  );
+  if (!claimed) {
+    const existing = await waitForJournalSubmission(key);
+    return streamFromText(existing.response || "");
+  }
+
+  try {
     // 1. Truncate entry
     const truncatedContent = content.slice(0, 2000);
 
@@ -164,72 +194,83 @@ export async function submitJournalEntry(content: string) {
     const embedding = await generateEmbedding(truncatedContent);
 
     // 3. Save entry (encrypted) + embedding (plain vector, safe for search)
-    const [newEntry] = await db.insert(entries).values({
+    const [newEntry] = await db
+      .insert(entries)
+      .values({
         userId: user.id,
         content: encrypt(truncatedContent),
         embedding,
-    }).returning();
+      })
+      .returning();
 
     // 4. Fetch latest user state
     const [latestState] = await db
-        .select()
-        .from(userStates)
-        .where(eq(userStates.userId, user.id))
-        .orderBy(desc(userStates.updatedAt))
-        .limit(1);
+      .select()
+      .from(userStates)
+      .where(eq(userStates.userId, user.id))
+      .orderBy(desc(userStates.updatedAt))
+      .limit(1);
 
     const currentState = latestState
-        ? (decryptJson(latestState.stateJson as string) as UserState)
-        : DEFAULT_USER_STATE;
+      ? (decryptJson(latestState.stateJson as string) as UserState)
+      : DEFAULT_USER_STATE;
 
     // 5. RAG: Retrieve 3 most relevant past entries
     const ragContext = await retrieveRagContext(user.id, embedding);
 
     // 6. State Architect — update snapshot with RAG context
-    const architectResult = await updateLifeSnapshot(currentState, truncatedContent, ragContext);
+    const architectResult = await updateLifeSnapshot(
+      currentState,
+      truncatedContent,
+      ragContext,
+    );
 
     // 7. Log State update (encrypted)
     await db.insert(stateUpdatesLog).values({
-        userId: user.id,
-        entryId: newEntry.id,
-        oldStateJson: encryptJson(currentState),
-        newStateJson: encryptJson(architectResult.updatedState),
-        tokensUsed: architectResult.tokensUsed,
-        model: architectResult.model,
+      userId: user.id,
+      entryId: newEntry.id,
+      oldStateJson: encryptJson(currentState),
+      newStateJson: encryptJson(architectResult.updatedState),
+      tokensUsed: architectResult.tokensUsed,
+      model: architectResult.model,
     });
 
     // 8. Save new state (encrypted)
     await db.insert(userStates).values({
-        userId: user.id,
-        stateJson: encryptJson(architectResult.updatedState),
-        version: (latestState?.version ?? 0) + 1,
+      userId: user.id,
+      stateJson: encryptJson(architectResult.updatedState),
+      version: (latestState?.version ?? 0) + 1,
     });
 
     //8.1 retrieve las 3 ai responses phrase starts to include in next prompt and let ai choose how to starts new phrase
-    const recentAIResponsesStartings =  (await getJournalHistory(1,4)).map((entry)=>entry.aiResponse?.slice(0,20)) || []
-    
+    const recentAIResponsesStartings =
+      (await getJournalHistory(1, 4)).map((entry) =>
+        entry.aiResponse?.slice(0, 20),
+      ) || [];
+
     // 9. Log State Architect call
     await db.insert(aiMessagesLog).values({
-        userId: user.id,
-        agentType: 'architect',
-        prompt: encrypt(truncatedContent),
-        response: encryptJson(architectResult.updatedState),
-        tokensUsed: architectResult.tokensUsed,
+      userId: user.id,
+      agentType: "architect",
+      prompt: encrypt(truncatedContent),
+      response: encryptJson(architectResult.updatedState),
+      tokensUsed: architectResult.tokensUsed,
     });
 
     // 10. Stream Psychologist Response
-    const continuityNotes = architectResult.updatedState.continuityNotes ?? '';
-    const currentPhase = architectResult.updatedState.timelineContext?.currentPhase ?? '';
-    const language = (user.language as 'es' | 'en') || 'es';
+    const continuityNotes = architectResult.updatedState.continuityNotes ?? "";
+    const currentPhase =
+      architectResult.updatedState.timelineContext?.currentPhase ?? "";
+    const language = (user.language as "es" | "en") || "es";
     const languageDirective = `
 RESPONSE LANGUAGE:
 The user writes in ${language.toUpperCase()}. Always respond in ${language.toUpperCase()}.
-${language === 'es' ? 'Responde siempre en español.' : 'Always respond in English.'}
+${language === "es" ? "Responde siempre en español." : "Always respond in English."}
 `;
 
     const result = streamText({
-        model: stateArchitectModel,
-        system: `
+      model: stateArchitectModel,
+      system: `
 ---
 You are an AI Reflective Psychology Assistant.
 ---
@@ -288,7 +329,7 @@ Not clinical. Not motivational. Not preachy.
 ---
 ${languageDirective}
 ---`,
-        prompt: `
+      prompt: `
             CURRENT LIFE SNAPSHOT:
             ${JSON.stringify(architectResult.updatedState, null, 2)}
 
@@ -298,41 +339,53 @@ ${languageDirective}
             LATEST JOURNAL ENTRY:
             ${truncatedContent}
         `,
-        topP: 0.9,
-        topK: 40,
+      topP: 0.9,
+      topK: 40,
     });
 
     // 11. Log psychologist call placeholder (updated after stream)
-    const [logEntry] = await db.insert(aiMessagesLog).values({
+    const [logEntry] = await db
+      .insert(aiMessagesLog)
+      .values({
         userId: user.id,
         entryId: newEntry.id,
-        agentType: 'psychologist',
-        prompt: encrypt(`Entry: ${truncatedContent}\nPhase: ${currentPhase}\nSnapshot: ${JSON.stringify(architectResult.updatedState)}`),
-        response: encrypt('STREAMING...'),
-    }).returning(); 
+        agentType: "psychologist",
+        prompt: encrypt(
+          `Entry: ${truncatedContent}\nPhase: ${currentPhase}\nSnapshot: ${JSON.stringify(architectResult.updatedState)}`,
+        ),
+        response: encrypt("STREAMING..."),
+      })
+      .returning();
 
     //  12. Tee the stream for background logging
     const [logStream, clientStream] = result.textStream.tee();
 
     (async () => {
-        let fullText = '';
-        const reader = logStream.getReader();
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                fullText += value;
-            }
-            await db.update(aiMessagesLog)
-                .set({ response: encrypt(fullText) })
-                .where(eq(aiMessagesLog.id, logEntry.id));
-        } catch (error) {
-            console.error('Logging stream error:', error);
-        } finally {
-            reader.releaseLock();
+      let fullText = "";
+      const reader = logStream.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          fullText += value;
         }
+        await db
+          .update(aiMessagesLog)
+          .set({ response: encrypt(fullText) })
+          .where(eq(aiMessagesLog.id, logEntry.id));
+        await completeJournalSubmission(key, fullText, newEntry.id);
+      } catch (error) {
+        console.error("Logging stream error:", error);
+        await failJournalSubmission(key, error);
+      } finally {
+        reader.releaseLock();
+      }
     })();
 
-    revalidatePath('/');
-    return clientStream; 
+    revalidatePath("/");
+    return clientStream;
+  } catch (error) {
+    await failJournalSubmission(key, error);
+    throw error;
+  }
 }
