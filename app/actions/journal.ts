@@ -9,13 +9,18 @@ import {
 } from "@/db/schema";
 import { getOrCreateUser } from "@/lib/db-utils";
 import { updateLifeSnapshot } from "@/lib/ai/state-architect";
-import { DEFAULT_USER_STATE, type UserState } from "@/lib/ai/state-schema";
-import { desc, eq, and, sql } from "drizzle-orm";
+import {
+  DEFAULT_USER_STATE,
+  UserStateSchema,
+  type UserState,
+} from "@/lib/ai/state-schema";
+import { desc, eq, and, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { streamText, embed } from "ai";
 //import { google } from '@ai-sdk/google';
 import { encrypt, encryptJson, decryptJson, decrypt } from "@/lib/encryption";
 import { embeddingModel, stateArchitectModel } from "@/lib/ai/models";
+import { createPsychologistInsightStream } from "@/lib/ai/psychologist-insight";
 import {
   claimJournalSubmission,
   completeJournalSubmission,
@@ -150,25 +155,178 @@ export async function getJournalHistory(
             and(
               eq(aiMessagesLog.userId, user.id),
               eq(aiMessagesLog.agentType, "psychologist"),
+              inArray(aiMessagesLog.entryId, entryIds),
             ),
           )
+          .orderBy(desc(aiMessagesLog.createdAt))
       : [];
 
-  const responseMap = new Map(
-    aiResponses.map((r) => [r.entryId, decrypt(r.response)]),
-  );
+  const responseMap = new Map<string, string>();
+  for (const response of aiResponses) {
+    if (response.entryId && !responseMap.has(response.entryId)) {
+      responseMap.set(response.entryId, decrypt(response.response));
+    }
+  }
 
-  return result.map((entry) => ({
-    id: entry.id,
-    content: decrypt(entry.content),
-    createdAt: entry.createdAt,
-    aiResponse: responseMap.get(entry.id) || null,
-  }));
+  return result.map((entry) => {
+    const hasResponseRecord = responseMap.has(entry.id);
+    const response = responseMap.get(entry.id);
+    const normalizedResponse = response?.trim();
+    const aiResponsePending =
+      hasResponseRecord &&
+      (!normalizedResponse || normalizedResponse === "STREAMING...");
+
+    return {
+      id: entry.id,
+      content: decrypt(entry.content),
+      createdAt: entry.createdAt,
+      aiResponse: aiResponsePending || !response ? null : response,
+      aiResponsePending,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
 // Insert Journal Pipeline
 // ---------------------------------------------------------------------------
+
+function persistInsightStream(
+  textStream: ReadableStream<string>,
+  logEntryId: string,
+  submission?: { key: string; entryId: string },
+) {
+  const reader = textStream.getReader();
+  let fullText = "";
+  let readerReleased = false;
+  const releaseReader = () => {
+    if (readerReleased) return;
+    reader.releaseLock();
+    readerReleased = true;
+  };
+
+  return new ReadableStream<string>({
+    async pull(controller) {
+      try {
+        const { done, value } = await reader.read();
+        if (!done) {
+          fullText += value;
+          controller.enqueue(value);
+          return;
+        }
+
+        if (!fullText.trim()) {
+          throw new Error("The AI returned an empty insight");
+        }
+
+        await db
+          .update(aiMessagesLog)
+          .set({ response: encrypt(fullText) })
+          .where(eq(aiMessagesLog.id, logEntryId));
+
+        if (submission) {
+          await completeJournalSubmission(
+            submission.key,
+            fullText,
+            submission.entryId,
+          );
+        }
+
+        controller.close();
+        releaseReader();
+      } catch (error) {
+        try {
+          if (submission) {
+            await failJournalSubmission(submission.key, error);
+          }
+        } catch (failureError) {
+          console.error("Failed to record insight stream failure:", failureError);
+        }
+        controller.error(error);
+        releaseReader();
+      }
+    },
+    async cancel(reason) {
+      await reader.cancel(reason);
+      releaseReader();
+      if (submission) {
+        await failJournalSubmission(
+          submission.key,
+          new Error("The insight stream was cancelled"),
+        );
+      }
+    },
+  });
+}
+
+export async function retryJournalInsight(entryId: string) {
+  const user = await getOrCreateUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const [entry] = await db
+    .select()
+    .from(entries)
+    .where(and(eq(entries.id, entryId), eq(entries.userId, user.id)))
+    .limit(1);
+  if (!entry) throw new Error("Journal entry not found");
+
+  const [stateUpdate] = await db
+    .select()
+    .from(stateUpdatesLog)
+    .where(
+      and(
+        eq(stateUpdatesLog.entryId, entry.id),
+        eq(stateUpdatesLog.userId, user.id),
+      ),
+    )
+    .orderBy(desc(stateUpdatesLog.createdAt))
+    .limit(1);
+  if (!stateUpdate) throw new Error("Insight context is unavailable");
+
+  const [logEntry] = await db
+    .select()
+    .from(aiMessagesLog)
+    .where(
+      and(
+        eq(aiMessagesLog.entryId, entry.id),
+        eq(aiMessagesLog.userId, user.id),
+        eq(aiMessagesLog.agentType, "psychologist"),
+      ),
+    )
+    .orderBy(desc(aiMessagesLog.createdAt))
+    .limit(1);
+  if (!logEntry) throw new Error("Insight record not found");
+
+  const existingResponse = decrypt(logEntry.response);
+  const normalizedResponse = existingResponse.trim();
+  if (normalizedResponse && normalizedResponse !== "STREAMING...") {
+    return streamFromText(existingResponse);
+  }
+
+  const parsedState = UserStateSchema.safeParse(
+    decryptJson(stateUpdate.newStateJson),
+  );
+  if (!parsedState.success) {
+    throw new Error("Saved insight context is invalid");
+  }
+
+  await db
+    .update(aiMessagesLog)
+    .set({ response: encrypt("STREAMING...") })
+    .where(eq(aiMessagesLog.id, logEntry.id));
+
+  const language = user.language === "en" ? "en" : "es";
+  const recentOpenings = (await getJournalHistory(1, 4)).map((historyEntry) =>
+    historyEntry.aiResponse?.slice(0, 20),
+  );
+  const result = createPsychologistInsightStream({
+    state: parsedState.data,
+    journalEntry: decrypt(entry.content),
+    language,
+    recentOpenings,
+  });
+
+  return persistInsightStream(result.textStream, logEntry.id);
+}
 
 export async function submitJournalEntry(
   content: string,
@@ -341,33 +499,10 @@ ${languageDirective}
       })
       .returning();
 
-    //  12. Tee the stream for background logging
-    const [logStream, clientStream] = result.textStream.tee();
-
-    (async () => {
-      let fullText = "";
-      const reader = logStream.getReader();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          fullText += value;
-        }
-        await db
-          .update(aiMessagesLog)
-          .set({ response: encrypt(fullText) })
-          .where(eq(aiMessagesLog.id, logEntry.id));
-        await completeJournalSubmission(key, fullText, newEntry.id);
-      } catch (error) {
-        console.error("Logging stream error:", error);
-        await failJournalSubmission(key, error);
-      } finally {
-        reader.releaseLock();
-      }
-    })();
-
-    revalidatePath("/");
-    return clientStream;
+    return persistInsightStream(result.textStream, logEntry.id, {
+      key,
+      entryId: newEntry.id,
+    });
   } catch (error) {
     await failJournalSubmission(key, error);
     throw error;

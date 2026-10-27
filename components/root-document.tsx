@@ -13,6 +13,7 @@ export function RootDocument({
     <html
       lang={language}
       className={`${inter.variable} h-full font-sans antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full bg-background">{children}</body>
     </html>

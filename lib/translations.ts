@@ -17,6 +17,7 @@ Los análisis generados por la IA pueden no ser siempre precisos, y el desarroll
         composer_toast_error_desc: 'Por favor intenta nuevamente.',
         composer_psychologist_insight: 'Visión de la AI',
         composer_processing_thoughts: 'Procesando tus pensamientos...',
+        composer_submitted_entry: 'Tu entrada',
 
         feed_empty: 'Aún no tienes entradas.',
         feed_mind_mirror: 'Espejo Mental',
@@ -53,6 +54,10 @@ Los análisis generados por la IA pueden no ser siempre precisos, y el desarroll
         insight_title: 'Visión de AI',
         insight_stop_reading: 'Dejar de leer',
         insight_read_aloud: 'Leer en voz alta',
+        insight_pending: 'No se pudo guardar la visión.',
+        insight_retry: 'Volver a generar',
+        insight_retrying: 'Generando...',
+        insight_retry_failed: 'No se pudo regenerar la visión. Inténtalo de nuevo.',
 
         header_logout: 'Cerrar sesión',
         header_profile: 'Perfil',
@@ -77,6 +82,7 @@ AI-generated insights may not always be accurate, and the developer cannot guara
         composer_toast_error_desc: 'Please try again.',
         composer_psychologist_insight: 'AI Insight',
         composer_processing_thoughts: 'Processing your thoughts...',
+        composer_submitted_entry: 'Your entry',
 
         feed_empty: 'Your previous entries will appear here.',
         feed_mind_mirror: 'Mind Mirror',
@@ -113,6 +119,10 @@ AI-generated insights may not always be accurate, and the developer cannot guara
         insight_title: 'AI Insight',
         insight_stop_reading: 'Stop reading',
         insight_read_aloud: 'Read aloud',
+        insight_pending: 'The insight was not saved.',
+        insight_retry: 'Regenerate',
+        insight_retrying: 'Generating...',
+        insight_retry_failed: 'Could not regenerate the insight. Please try again.',
 
         header_logout: 'Logout',
         header_profile: 'Profile',

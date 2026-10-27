@@ -9,20 +9,25 @@ import { Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/lib/language-context";
 import { t } from "@/lib/translations";
+import { useRouter } from "next/navigation";
 
 export function JournalComposer() {
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiResponse, setAiResponse] = useState("");
+  const [submittedThought, setSubmittedThought] = useState("");
   const submissionKeyRef = useRef<string | null>(null);
+  const router = useRouter();
   const { language } = useLanguage();
   const trans = t[language];
 
   async function handleSubmit() {
     if (!input.trim() || isSubmitting) return;
 
+    const thought = input;
     setIsSubmitting(true);
     setAiResponse("");
+    setSubmittedThought("");
     const submissionKey = submissionKeyRef.current ?? crypto.randomUUID();
     submissionKeyRef.current = submissionKey;
 
@@ -31,7 +36,9 @@ export function JournalComposer() {
     });
 
     try {
-      const stream = await submitJournalEntry(input, submissionKey);
+      const stream = await submitJournalEntry(thought, submissionKey);
+      setInput("");
+      setSubmittedThought(thought);
 
       if (stream instanceof ReadableStream) {
         const reader = stream.getReader();
@@ -48,7 +55,7 @@ export function JournalComposer() {
         }
       }
 
-      setInput("");
+      router.refresh();
       submissionKeyRef.current = null;
       toast.success(trans.composer_toast_success_title, {
         id: toastId,
@@ -95,8 +102,20 @@ export function JournalComposer() {
       </Card>
 
       {/* AI Response Section */}
-      {(aiResponse || isSubmitting) && (
+      {(submittedThought || aiResponse || isSubmitting) && (
         <section className="space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {submittedThought && (
+            <Card className="border-none bg-accent/5 shadow-none">
+              <CardContent className="p-4">
+                <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  {trans.composer_submitted_entry}
+                </p>
+                <p className="whitespace-pre-wrap text-md leading-relaxed text-foreground/90">
+                  {submittedThought}
+                </p>
+              </CardContent>
+            </Card>
+          )}
           <div className="flex items-center gap-2 px-1">
             <div className="relative">
               <div className="h-3 w-3 rounded-full bg-primary animate-ping absolute opacity-75" />

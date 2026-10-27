@@ -28,11 +28,7 @@ An AI-powered journaling companion designed for longitudinal memory and reflecti
 - `/app` is the authenticated journal and is excluded from search indexing.
 - `/sign-in` and `/sign-up` are account routes and are excluded from search indexing.
 
-Set `NEXT_PUBLIC_SITE_URL` to the canonical production origin in every Vercel
-environment and local development configuration; use the production origin
-even for preview deployments. Preview deployments are marked `noindex` and
-blocked from crawling; only the public landing pages appear in the production
-sitemap.
+Set `NEXT_PUBLIC_SITE_URL` to the canonical production origin in every Vercel environment and local development configuration; use the production origin even for preview deployments. Preview deployments are marked `noindex` and blocked from crawling; only the public landing pages appear in the production sitemap.
 
 ## 🏗 Architecture
 
