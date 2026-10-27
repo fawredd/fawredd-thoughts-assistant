@@ -129,7 +129,7 @@ export function JournalHistoryList({
               {trans.history_previous_entries}
             </h2>
           </AccordionTrigger>
-          <AccordionContent className="max-h-full overflow-y-auto">
+          <AccordionContent className="max-h-full overflow-y-auto [scrollbar-gutter:stable]">
             <div className="space-y-8 pb-4">
               <div className="flex flex-col gap-8">
                 {history.map((entry) => (

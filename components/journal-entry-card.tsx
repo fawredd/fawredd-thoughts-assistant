@@ -51,7 +51,7 @@ export function JournalEntryCard({ id, content, date }: JournalEntryCardProps) {
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                         {date}
                     </p>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         {!isEditing ? (
                             <>
                                 <Button
