@@ -1,4 +1,3 @@
-// app/manifest.ts
 import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -6,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Fawredd - Thoughts Assistant',
     short_name: 'Thoughts ',
     description: 'Thoughts Assistant',
-    start_url: '/',
+    start_url: '/app',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#000000',

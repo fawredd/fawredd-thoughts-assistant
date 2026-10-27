@@ -30,11 +30,11 @@ export async function JournalFeed() {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] h-full max-w-6xl mx-auto p-4 gap-12">
             {/* Left: Main Feed */}
-            <main className="space-y-4">
+            <section className="space-y-4">
                 <header className="space-y-2">
                     <div className="flex items-center gap-2 text-primary font-bold">
                         <Sparkles className="h-5 w-5" />
-                        <span className="tracking-tight text-md uppercase">{trans.feed_mind_mirror}</span>
+                        <h1 className="tracking-tight text-md uppercase">{trans.feed_mind_mirror}</h1>
                     </div>
                     <p className="text-sm text-muted-foreground/80 leading-relaxed max-w-2xl">
                         {trans.feed_description}
@@ -46,7 +46,7 @@ export async function JournalFeed() {
                 <div className="border-t border-primary/10 pt-6">
                     <JournalHistory userId={user.id} />
                 </div>
-            </main>
+            </section>
 
             {/* Right: Life Snapshot Sidebar */}
             <aside className="space-y-8">

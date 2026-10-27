@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { SignOutButton, useUser } from "@clerk/nextjs"
-import { Menu, X, LogOut, Settings, User } from "lucide-react"
+import { Menu, LogOut, User } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -37,7 +37,7 @@ export function Header() {
         <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <div className="flex items-center gap-2">
-                    <Link href="/" className="flex items-center space-x-2">
+                    <Link href="/app" className="flex items-center space-x-2">
                         <span className="text-sm font-bold tracking-tight text-primary">
                             Fawredd - <span className="text-muted-foreground font-small md:font-medium">Thoughts</span>
                         </span>
@@ -74,19 +74,7 @@ export function Header() {
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem asChild>
-                                    <Link href="/profile" className="cursor-pointer">
-                                        <User className="mr-2 h-4 w-4" />
-                                        <span>{trans.header_profile}</span>
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link href="/settings" className="cursor-pointer">
-                                        <Settings className="mr-2 h-4 w-4" />
-                                        <span>{trans.header_settings}</span>
-                                    </Link>
-                                </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer">
                                     <SignOutButton>
                                         <div className="flex w-full items-center">
@@ -139,25 +127,11 @@ export function Header() {
 
                                 <nav className="flex flex-col gap-2">
                                     <Link
-                                        href="/"
+                                        href="/app"
                                         onClick={() => setIsOpen(false)}
                                         className="flex items-center px-4 py-3 text-lg font-medium rounded-xl hover:bg-accent transition-colors"
                                     >
                                         {trans.header_home}
-                                    </Link>
-                                    <Link
-                                        href="/profile"
-                                        onClick={() => setIsOpen(false)}
-                                        className="flex items-center px-4 py-3 text-lg font-medium rounded-xl hover:bg-accent transition-colors"
-                                    >
-                                        {trans.header_profile}
-                                    </Link>
-                                    <Link
-                                        href="/settings"
-                                        onClick={() => setIsOpen(false)}
-                                        className="flex items-center px-4 py-3 text-lg font-medium rounded-xl hover:bg-accent transition-colors"
-                                    >
-                                        {trans.header_settings}
                                     </Link>
                                     <InstallButton />
                                 </nav>

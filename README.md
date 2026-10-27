@@ -13,13 +13,26 @@ An AI-powered journaling companion designed for longitudinal memory and reflecti
 
 ## 🛠 Tech Stack
 
-- **Framework**: [Next.js 15+](https://nextjs.org/) (App Router)
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
 - **Authentication**: [Clerk](https://clerk.com/)
 - **Database**: [Neon](https://neon.tech/) (PostgreSQL)
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
 - **AI Engine**: [Vercel AI SDK](https://sdk.vercel.ai/) with Google Gemini Models
 - **Styling**: Tailwind CSS & Shadcn UI
 - **Deployment**: Vercel
+
+## Public and Application Routes
+
+- `/` is the English public landing page.
+- `/es` is the Spanish public landing page.
+- `/app` is the authenticated journal and is excluded from search indexing.
+- `/sign-in` and `/sign-up` are account routes and are excluded from search indexing.
+
+Set `NEXT_PUBLIC_SITE_URL` to the canonical production origin in every Vercel
+environment and local development configuration; use the production origin
+even for preview deployments. Preview deployments are marked `noindex` and
+blocked from crawling; only the public landing pages appear in the production
+sitemap.
 
 ## 🏗 Architecture
 
